@@ -24,17 +24,16 @@ func main() {
 	if err != nil {
 		log.Fatal("Ошибка загрузки.env файла")
 	}
-
-	// Получение BASE_URL
-	url := os.Getenv("BASE_URL")
+	// Получение DIGITAL_PROFILE_BASE_URL
+	digitalProfileUrl := os.Getenv("DIGITAL_PROFILE_BASE_URL")
 	// Получение DIGITAL_PROFILE_API_TOKEN
-	var bearer = "Bearer " + os.Getenv("DIGITAL_PROFILE_API_TOKEN")
+	var digitalProfileBearer = "Bearer " + os.Getenv("DIGITAL_PROFILE_API_TOKEN")
 
 	// TODO: Все что ниже перенести в соответствуюшие файлы. Файл main будет отвечать за инициализацию и поочередный билд
 	// функций обновления.
 
-	req, err := http.NewRequest("GET", url, nil)
-	req.Header.Add("Authorization", bearer)
+	req, err := http.NewRequest("GET", digitalProfileUrl, nil)
+	req.Header.Add("Authorization", digitalProfileBearer)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
