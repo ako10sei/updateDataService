@@ -1,4 +1,4 @@
-package main
+package digital_profile
 
 type Organization struct {
 	ID                  int    `json:"id"`

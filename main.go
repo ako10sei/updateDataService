@@ -3,21 +3,36 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/joho/godotenv"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
+	"visiologyDataUpdate/digital_profile"
 )
 
 type Response struct {
-	Count         int            `json:"count"`
-	Next          any            `json:"next"`
-	Previous      any            `json:"previous"`
-	Organizations []Organization `json:"results"`
+	Count         int                            `json:"count"`
+	Next          any                            `json:"next"`
+	Previous      any                            `json:"previous"`
+	Organizations []digital_profile.Organization `json:"results"`
 }
 
 func main() {
-	url := "https://xn--n1abf.xn--33-6kcadhwnl3cfdx.xn--p1ai/digital_profile/api/v1.0.0/organizations"
-	var bearer = "Bearer " + "Ed3SlmOQvZldnYDL7aE4qDX1lBk0Eo"
+	// Загрузка файла с переменными окружения
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Ошибка загрузки.env файла")
+	}
+
+	// Получение BASE_URL
+	url := os.Getenv("BASE_URL")
+	// Получение DIGITAL_PROFILE_API_TOKEN
+	var bearer = "Bearer " + os.Getenv("DIGITAL_PROFILE_API_TOKEN")
+
+	// TODO: Все что ниже перенести в соответствуюшие файлы. Файл main будет отвечать за инициализацию и поочередный билд
+	// функций обновления.
+
 	req, err := http.NewRequest("GET", url, nil)
 	req.Header.Add("Authorization", bearer)
 
