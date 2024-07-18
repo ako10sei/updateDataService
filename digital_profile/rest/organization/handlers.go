@@ -9,16 +9,16 @@ import (
 	"visiologyDataUpdate/digital_profile/structs"
 )
 
-type Response struct {
+type GetResponse struct {
 	Count         int                    `json:"count"`
 	Next          any                    `json:"next"`
 	Previous      any                    `json:"previous"`
 	Organizations []structs.Organization `json:"results"`
 }
 
-// Handler
-// Внутри функции мы получаем JSON response из АПИ ЦП по выгрузке организаций
-func Handler(digitalProfileUrl string, digitalProfileBearer string) Response {
+// GetHandler
+// Внутри функции мы получаем JSON response из АПИ ЦП по выгрузке организаций и возвращаем его в виде структуры GetResponse
+func GetHandler(digitalProfileUrl string, digitalProfileBearer string) GetResponse {
 	req, err := http.NewRequest("GET", digitalProfileUrl+"organizations", nil)
 	if err != nil {
 		log.Fatal("Ошибка: %v", err)
@@ -40,8 +40,8 @@ func Handler(digitalProfileUrl string, digitalProfileBearer string) Response {
 			panic(err.Error())
 		}
 		fmt.Println("Non-ok HTTP status:", resp.StatusCode)
-		fmt.Println("Response body:", string(bodyBytes))
-		return Response{}
+		fmt.Println("GetResponse body:", string(bodyBytes))
+		return GetResponse{}
 	}
 
 	body, err := io.ReadAll(resp.Body)
@@ -50,7 +50,7 @@ func Handler(digitalProfileUrl string, digitalProfileBearer string) Response {
 		panic(err.Error())
 	}
 
-	var response Response
+	var response GetResponse
 	json.Unmarshal(body, &response)
 
 	return response

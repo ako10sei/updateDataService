@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/joho/godotenv"
 	"log"
 	"os"
@@ -34,13 +33,9 @@ func init() {
 }
 
 func main() {
-	digitalProfileResponse := digitalprofile.Handler(digitalProfileUrl, digitalProfileBearer)
-	visiologyResponse := visiology.Handler(visiologyUrl, visiologyBearer, visiologyApiVersion)
+	digitalProfileResponse := digitalprofile.GetHandler(digitalProfileUrl, digitalProfileBearer)
+	visiologyResponse := visiology.GetHandler(visiologyUrl, visiologyBearer, visiologyApiVersion)
 
-	for _, d := range digitalProfileResponse.Organizations {
-		for _, v := range visiologyResponse.Values {
-			fmt.Printf("Names: %s %s\n", d.Name, v[2])
-		}
-	}
+	defer visiology.PostHandler(digitalProfileResponse, visiologyResponse, visiologyUrl, visiologyApiVersion, visiologyBearer)
 
 }

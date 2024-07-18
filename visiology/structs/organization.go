@@ -1,6 +1,7 @@
 package structs
 
 type Column struct {
+	CPId               int    `json:"id_ЦП"`
 	CoollegeId         int    `json:"id_учреждения"`
 	CoollegeName       string `json:"Наименование учреждения"`
 	CoollegeShortName  int    `json:"Краткое наименование"`
