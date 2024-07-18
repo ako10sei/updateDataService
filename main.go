@@ -5,7 +5,8 @@ import (
 	"github.com/joho/godotenv"
 	"log"
 	"os"
-	"visiologyDataUpdate/digital_profile/rest/organization"
+	digitalprofile "visiologyDataUpdate/digital_profile/rest/organization"
+	visiology "visiologyDataUpdate/visiology/rest/organization"
 )
 
 var (
@@ -13,6 +14,7 @@ var (
 	digitalProfileBearer string
 	visiologyUrl         string
 	visiologyBearer      string
+	visiologyApiVersion  string
 )
 
 func init() {
@@ -27,12 +29,18 @@ func init() {
 	// Получение VISIOLOGY_BASE_URL и VISIOLOGY_API_TOKEN
 	visiologyUrl = os.Getenv("VISIOLOGY_BASE_URL")
 	visiologyBearer = "Bearer " + os.Getenv("VISIOLOGY_API_TOKEN")
+	visiologyApiVersion = os.Getenv("VISIOLOGY_API_VERSION")
 
 }
 
 func main() {
-	digitalProfileResponse := organization.Handler(digitalProfileUrl, digitalProfileBearer)
-	for _, p := range digitalProfileResponse.Organizations {
-		fmt.Println("Organization", p.ID, p.Name, p.ShortName, p.Parent)
+	digitalProfileResponse := digitalprofile.Handler(digitalProfileUrl, digitalProfileBearer)
+	visiologyResponse := visiology.Handler(visiologyUrl, visiologyBearer, visiologyApiVersion)
+
+	for _, d := range digitalProfileResponse.Organizations {
+		for _, v := range visiologyResponse.Values {
+			fmt.Printf("Names: %s %s\n", d.Name, v[2])
+		}
 	}
+
 }

@@ -1,10 +1,5 @@
 package structs
 
-type Response struct {
-	Columns []Column `json:"columns"`
-	Values  [][]any  `json:"values"`
-}
-
 type Column struct {
 	CoollegeId         int    `json:"id_учреждения"`
 	CoollegeName       string `json:"Наименование учреждения"`
