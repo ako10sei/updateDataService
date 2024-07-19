@@ -1,6 +1,7 @@
 package organization
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -10,98 +11,82 @@ import (
 	"visiologyDataUpdate/visiology/structs"
 )
 
-type GetResponse struct {
-	Columns []structs.Column `json:"columns"`
-	Values  [][]any          `json:"values"`
-}
-
-// GetHandler
-// Внутри функции мы получаем JSON response из АПИ Visiology и возвращаем его в виде структуры GetResponse
-func GetHandler(visiologyUrl string, visiologyBearer string, visiologyApiVersion string) GetResponse {
-	var response GetResponse
-	req, err := http.NewRequest("GET", visiologyUrl, nil)
-	if err != nil {
-		log.Fatal("Ошибка: %v", err)
-	}
-	req.Header.Add("Authorization", visiologyBearer)
-	req.Header.Add("x-api-version", visiologyApiVersion)
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Println("Ошибка в ответе.\n[ERROR] -", err)
-		panic(err.Error())
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		bodyBytes, err := io.ReadAll(resp.Body)
-		if err != nil {
-			log.Println("Ошибка во время чтения тела ответа:", err)
-			panic(err.Error())
-		}
-		fmt.Println("Non-ok HTTP status:", resp.StatusCode)
-		fmt.Println("GetResponse body:", string(bodyBytes))
-		return GetResponse{}
-	}
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		log.Println("Ошибка во время обработки JSON:", err)
-		panic(err.Error())
-	}
-	json.Unmarshal(body, &response)
-
-	return response
-}
-
+// PostHandler обрабатывает ответ от цифрового профиля и отправляет его на платформу Visiology.
+// Он создает тело запроса, содержащее данные организации, и отправляет его в виде POST-запроса по указанному URL-адресу Visiology.
+//
+// Параметры:
+// - digitalProfileResponse: Ответ от API цифрового профиля, содержащий данные об организациях.
+// - visiologyUrl: URL-адрес платформы Visiology.
+// - visiologyApiVersion: Версия API Visiology, которая будет использоваться.
+// - visiologyBearer: Токен авторизации для проверки подлинности с платформой Visiology.
 func PostHandler(
 	digitalProfileResponse digitalprofile.GetResponse,
-	visiologyResponse GetResponse,
 	visiologyUrl string,
 	visiologyApiVersion string,
 	visiologyBearer string) {
 
+	// TODO: Реализовать передачу параметров: Количество студентов общее,
+	// TODO: Количество мастеров обучения, Проектная мощность, Филиалы.
+
+	var column structs.Column
+	fields := column.GetAllFields()
+	// Создание тела запроса, содержащего данные организаций
 	requestBody := []map[string]interface{}{}
-	for i, d := range digitalProfileResponse.Organizations {
-		for _, col := range visiologyResponse.Columns {
+	for i, org := range digitalProfileResponse.Organizations {
+		for _, field := range fields {
 			rowData := map[string]interface{}{
 				"rownum": i,
 				"values": []map[string]interface{}{
 					{
-						"column": col.CoollegeId,
-						"value":  d.ID,
+						"column": field,
+						"value":  org.GetColumnByField()[field],
 					},
 				},
 			}
 			requestBody = append(requestBody, rowData)
 		}
 	}
-
-	jsonBody, err := json.MarshalIndent(requestBody[:20], "", "  ")
+	// Маршалирование тела запроса в JSON-формате для отправки на сервер Visiology
+	jsonBody, err := json.Marshal(requestBody)
 	if err != nil {
 		return
 	}
+	// Создание HTTP-запроса с телом запроса
+	req, err := http.NewRequest("POST", visiologyUrl+"/update", bytes.NewBuffer(jsonBody))
+	if err != nil {
+		return
+	}
+	// Добавление заголовков HTTP-запроса
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("Content-Length", fmt.Sprintf("%d", len(jsonBody)))
+	req.Header.Add("Authorization", visiologyBearer)
+	req.Header.Add("x-api-version", visiologyApiVersion)
+	req.Header.Add("Host", "<calculated when request is sent>")
+	// Отправка HTTP-запроса и получение ответа
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	// Закрытие тела ответа после завершения работы с ним
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			fmt.Println("Ошибка закрытия тела ответа:", err)
+		}
+	}(resp.Body)
 
-	fmt.Println(string(jsonBody))
-	//jsonBody, err := json.Marshal(requestBody)
-	//if err != nil {
-	//	return
-	//}
-	//
-	//req, err := http.NewRequest("POST", visiologyUrl, bytes.NewBuffer(jsonBody))
-	//if err != nil {
-	//	return
-	//}
-	//
-	//req.Header.Set("Content-Type", "application/json")
-	//req.Header.Set("Authorization", "Bearer "+visiologyBearer)
-	//req.Header.Set("X-Visiology-Api-Version", visiologyApiVersion)
-	//
-	//client := &http.Client{}
-	//resp, err := client.Do(req)
-	//if err != nil {
-	//	return
-	//}
-	//defer resp.Body.Close()
+	// Проверка статуса HTTP-ответа
+	if resp.StatusCode != http.StatusOK {
+		// Чтение тела ответа в случае некорректного статуса HTTP
+		bodyBytes, err := io.ReadAll(resp.Body)
+		if err != nil {
+			log.Fatal("Ошибка во время чтения тела ответа:", err)
+		}
+
+		// Вывод статуса HTTP и тела ответа
+		fmt.Println("Non-ok HTTP status:", resp.StatusCode)
+		fmt.Println("GetResponse body:", string(bodyBytes))
+	}
 }
