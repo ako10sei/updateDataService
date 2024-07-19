@@ -1,47 +1,49 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
-	"io/ioutil"
+	"github.com/joho/godotenv"
 	"log"
-	"net/http"
+	"os"
+	digitalprofile "visiologyDataUpdate/digital_profile/rest/organization"
+	visiology "visiologyDataUpdate/visiology/rest/organization"
 )
 
-type Response struct {
-	Count         int            `json:"count"`
-	Next          any            `json:"next"`
-	Previous      any            `json:"previous"`
-	Organizations []Organization `json:"results"`
+var (
+	digitalProfileUrl    string
+	digitalProfileBearer string
+	visiologyUrl         string
+	visiologyBearer      string
+	visiologyApiVersion  string
+)
+
+// init является специальной функцией, которая выполняется до функции main.
+// Она используется для инициализации переменных, выполнения начальных настроек или выполнения любых других необходимых инициализаций.
+func init() {
+	// Загрузка переменных окружения из файла .env
+	err := godotenv.Load()
+	if err != nil {
+		// Вывод ошибки и завершение программы, если файл .env не удалось загрузить
+		log.Fatal("Ошибка загрузки файла .env")
+	}
+
+	// Получение URL-адреса для API цифрового профиля и токена доступа
+	digitalProfileUrl = os.Getenv("DIGITAL_PROFILE_BASE_URL")
+	digitalProfileBearer = "Bearer " + os.Getenv("DIGITAL_PROFILE_API_TOKEN")
+
+	// Получение URL-адреса для платформы Visiology и токена доступа
+	visiologyUrl = os.Getenv("VISIOLOGY_BASE_URL")
+	visiologyBearer = "Bearer " + os.Getenv("VISIOLOGY_API_TOKEN")
+
+	// Получение версии API Visiology
+	visiologyApiVersion = os.Getenv("VISIOLOGY_API_VERSION")
 }
 
+// main является точкой входа в программу. Она инициализирует необходимые переменные,
+// получает данные из API цифрового профиля и отправляет данные на платформу Visiology.
 func main() {
-	url := "https://xn--n1abf.xn--33-6kcadhwnl3cfdx.xn--p1ai/digital_profile/api/v1.0.0/organizations"
-	var bearer = "Bearer " + "Ed3SlmOQvZldnYDL7aE4qDX1lBk0Eo"
-	req, err := http.NewRequest("GET", url, nil)
-	req.Header.Add("Authorization", bearer)
+	// Получение ответа от API цифрового профиля
+	digitalProfileResponse := digitalprofile.GetHandler(digitalProfileUrl, digitalProfileBearer)
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Println("Ошибка в ответе.\n[ERROR] -", err)
-	}
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Println("Ошибка во время обработки JSON:", err)
-	}
-
-	var response Response
-
-	look := json.Unmarshal(body, &response)
-
-	if look != nil {
-		fmt.Println(look)
-	}
-
-	for i, p := range response.Organizations {
-		fmt.Println("Organization", i+1, ":", p.Name, p.ShortName)
-	}
+	// Отправка ответа на платформу Visiology с использованием маркера доступа и версии API
+	defer visiology.PostHandler(digitalProfileResponse, visiologyUrl, visiologyApiVersion, visiologyBearer)
 }
