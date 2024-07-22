@@ -27,7 +27,7 @@ type Column struct {
 func (c *Column) GetAllFields() []string {
 	return []string{
 		"id_ЦП",
-		"id_учреждения",
+		//"id_учреждения",
 		"Наименование учреждения",
 		"Краткое наименование",
 		"ОГРН",
