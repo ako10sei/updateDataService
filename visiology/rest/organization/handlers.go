@@ -11,6 +11,9 @@ import (
 	"visiologyDataUpdate/visiology/structs"
 )
 
+// OrgIds формуирует массив id организаций валидных для обработки и обновления по данным ЦП.
+var OrgIds = []int{3, 27, 11, 12, 5, 17, 22, 7, 21, 20, 13, 10, 24, 14, 15, 16, 18, 6, 19, 9, 8, 30, 43}
+
 // PostHandler обрабатывает ответ от цифрового профиля и отправляет его на платформу Visiology.
 // Он создает тело запроса, содержащее данные организации, и отправляет его в виде POST-запроса по указанному URL-адресу Visiology.
 //
@@ -21,8 +24,8 @@ import (
 // - visiologyBearer: Токен авторизации для проверки подлинности с платформой Visiology.
 func PostHandler(
 	digitalProfileResponse digitalprofile.GetResponse,
-	visiologyUrl string,
-	visiologyApiVersion string,
+	visiologyUrl,
+	visiologyApiVersion,
 	visiologyBearer string) {
 
 	// TODO: Реализовать передачу параметров: Количество студентов общее,
@@ -30,20 +33,36 @@ func PostHandler(
 
 	var column structs.Column
 	fields := column.GetAllFields()
+	rownum := 0
 	// Создание тела запроса, содержащего данные организаций
-	requestBody := []map[string]interface{}{}
-	for i, org := range digitalProfileResponse.Organizations {
-		for _, field := range fields {
-			rowData := map[string]interface{}{
-				"rownum": i,
-				"values": []map[string]interface{}{
-					{
-						"column": field,
-						"value":  org.GetColumnByField()[field],
-					},
-				},
+	var requestBody []map[string]interface{}
+	for rownum != 23 {
+		for _, org := range digitalProfileResponse.Organizations {
+			if rownum > 22 {
+				break
 			}
-			requestBody = append(requestBody, rowData)
+			// Т.к. необходимо отправлять данные только для указанных идентификаторов организаций (см. OrgIds),
+			// Требуется добавить проверку на работу с указанными идентификаторами.
+			// В случае, если строится дата для оргнизации, которая не входит в OrgIds,
+			// То условие не пропустит данную организацию для построения JSON, который далее отправится в Visiology.
+			if org.ID == OrgIds[rownum] {
+				for _, field := range fields {
+					rowData := map[string]interface{}{
+						"rownum": rownum,
+						"values": []map[string]interface{}{
+							{
+								"column": field,
+								"value":  org.GetColumnByField()[field],
+							},
+						},
+					}
+					requestBody = append(requestBody, rowData)
+				}
+
+			} else {
+				continue
+			}
+			rownum++
 		}
 	}
 	// Маршалирование тела запроса в JSON-формате для отправки на сервер Visiology
@@ -51,6 +70,7 @@ func PostHandler(
 	if err != nil {
 		return
 	}
+
 	// Создание HTTP-запроса с телом запроса
 	req, err := http.NewRequest("POST", visiologyUrl+"/update", bytes.NewBuffer(jsonBody))
 	if err != nil {

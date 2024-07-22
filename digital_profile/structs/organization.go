@@ -14,7 +14,7 @@ type Organization struct {
 	WebSite       any    `json:"web_site"`
 	FAddressFull  any    `json:"f_address_full"`
 	UAddressFull  any    `json:"u_address_full"`
-	TerritoryName any    `json:"territory_name"`
+	TerritoryName string `json:"territory_name"`
 	Parent        any    `json:"parent"`
 	MaxOccupancy  int    `json:"maximum_occupancy"`
 	StudentsCount int    `json:"students_count"`
@@ -26,19 +26,51 @@ type Organization struct {
 // а значения соответствуют полям структуры Organization.
 func (o *Organization) GetColumnByField() map[string]any {
 	return map[string]any{
-		"id_ЦП":         o.ID,
-		"id_учреждения": o.ID,
-		"Наименование учреждения": o.Name,
-		"Краткое наименование":    o.ShortName,
 		"ОГРН":               o.Ogrn,
 		"Адрес юридический":  o.UAddressFull,
 		"Адрес фактический":  o.FAddressFull,
 		"Руководитель":       fmt.Sprintf("%s, %s, %s", o.Director, o.Email, o.Telephone),
-		"Район":              o.TerritoryName,
+		"Район":              GetAreaIdByName(o.TerritoryName),
 		"Филиалы":            "",
 		"Сайт":               o.WebSite,
 		"Проектная мощность": o.MaxOccupancy,
 		"Количество студентов общее":   0,
 		"Количество мастеров обучения": o.MastersCount,
 	}
+}
+
+// GetAreaIdByName возвращает идентификатор района на основе его названия.
+// Функция использует словарь для хранения названий районов и их соответствующих идентификаторов.
+// Если указанное название района не найдено в словаре, функция возвращает -1.
+func GetAreaIdByName(areaName string) int {
+	areaMap := map[string]int{
+		"Александровский район":  1,
+		"Вязниковский район":     2,
+		"Гороховецкий район":     3,
+		"Гусь-Хрустальный район": 4,
+		"Камешковский район":     5,
+		"Киржачский район":       6,
+		"Ковровский район":       7,
+		"Кольчугинский район":    8,
+		"Меленковский район":     9,
+		"Муром":                  10,
+		"Петушинский район":      11,
+		"Селивановский район":    12,
+		"Собинский район":        13,
+		"Судогодский район":      14,
+		"Суздальский район":      15,
+		"Юрьев-Польский район":   16,
+		"Владимир":               17,
+		"Гусь-Хрустальный":       18,
+		"Ковров":                 19,
+		"Радужный":               20,
+		"Муромский район":        21,
+	}
+
+	id, ok := areaMap[areaName]
+	if !ok {
+		return -1
+	}
+
+	return id
 }
