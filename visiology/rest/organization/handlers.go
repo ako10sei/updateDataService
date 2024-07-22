@@ -70,7 +70,6 @@ func PostHandler(
 	if err != nil {
 		return
 	}
-	fmt.Println(string(jsonBody))
 
 	// Создание HTTP-запроса с телом запроса
 	req, err := http.NewRequest("POST", visiologyUrl+"/update", bytes.NewBuffer(jsonBody))
