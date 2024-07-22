@@ -26,10 +26,7 @@ type Organization struct {
 // а значения соответствуют полям структуры Organization.
 func (o *Organization) GetColumnByField() map[string]any {
 	return map[string]any{
-		"id_ЦП": o.ID,
-		//"id_учреждения": o.ID,
-		"Наименование учреждения": o.Name,
-		"Краткое наименование":    o.ShortName,
+		"Краткое наименование": o.ShortName,
 		"ОГРН":               o.Ogrn,
 		"Адрес юридический":  o.UAddressFull,
 		"Адрес фактический":  o.FAddressFull,
