@@ -25,7 +25,7 @@ type GetResponse struct {
 //
 // Возвращаемое значение:
 // - GetResponse: Структура, содержащая данные организаций, полученные из ответа API цифрового профиля.
-func GetHandler(digitalProfileUrl string, digitalProfileBearer string) GetResponse {
+func GetHandler(digitalProfileUrl, digitalProfileBearer string) GetResponse {
 	// Создание нового HTTP-запроса
 	req, err := http.NewRequest("GET", digitalProfileUrl+"organizations", nil)
 	if err != nil {

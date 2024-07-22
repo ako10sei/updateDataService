@@ -24,8 +24,8 @@ var OrgIds = []int{3, 27, 11, 12, 5, 17, 22, 7, 21, 20, 13, 10, 24, 14, 15, 16, 
 // - visiologyBearer: Токен авторизации для проверки подлинности с платформой Visiology.
 func PostHandler(
 	digitalProfileResponse digitalprofile.GetResponse,
-	visiologyUrl string,
-	visiologyApiVersion string,
+	visiologyUrl,
+	visiologyApiVersion,
 	visiologyBearer string) {
 
 	// TODO: Реализовать передачу параметров: Количество студентов общее,
