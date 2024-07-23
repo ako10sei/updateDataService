@@ -21,10 +21,10 @@ type Organization struct {
 	MastersCount  int    `json:"masters_count"`
 }
 
-// GetColumnByField возвращает карту, содержащую определенные поля структуры Organization
+// GetValueByField возвращает карту, содержащую определенные поля структуры Organization
 // в форматированном виде для дальнейшей обработки. Ключи карты представляют имена столбцов в таблице Visiology,
 // а значения соответствуют полям структуры Organization.
-func (o *Organization) GetColumnByField() map[string]any {
+func (o *Organization) GetValueByField() map[string]any {
 	return map[string]any{
 		"ОГРН":               o.Ogrn,
 		"Адрес юридический":  o.UAddressFull,

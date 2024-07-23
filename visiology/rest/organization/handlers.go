@@ -52,7 +52,7 @@ func PostHandler(
 						"values": []map[string]interface{}{
 							{
 								"column": field,
-								"value":  org.GetColumnByField()[field],
+								"value":  org.GetValueByField()[field],
 							},
 						},
 					}
@@ -86,14 +86,14 @@ func PostHandler(
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println(err)
+		log.Fatal("Ошибка при отправке HTTP-запроса:", err)
 		return
 	}
 	// Закрытие тела ответа после завершения работы с ним
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
 		if err != nil {
-			fmt.Println("Ошибка закрытия тела ответа:", err)
+			log.Fatal("Ошибка закрытия тела ответа:", err)
 		}
 	}(resp.Body)
 
@@ -101,12 +101,11 @@ func PostHandler(
 	if resp.StatusCode != http.StatusOK {
 		// Чтение тела ответа в случае некорректного статуса HTTP
 		bodyBytes, err := io.ReadAll(resp.Body)
-		if err != nil {
-			log.Fatal("Ошибка во время чтения тела ответа:", err)
-		}
-
 		// Вывод статуса HTTP и тела ответа
 		fmt.Println("Non-ok HTTP status:", resp.StatusCode)
 		fmt.Println("GetResponse body:", string(bodyBytes))
+		if err != nil {
+			log.Fatal("Ошибка во время чтения тела ответа:", err)
+		}
 	}
 }
