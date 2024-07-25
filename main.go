@@ -9,11 +9,11 @@ import (
 )
 
 var (
-	digitalProfileUrl    string
+	digitalProfileURL    string
 	digitalProfileBearer string
-	visiologyUrl         string
+	visiologyURL         string
 	visiologyBearer      string
-	visiologyApiVersion  string
+	visiologyAPIVersion  string
 )
 
 // init является специальной функцией, которая выполняется до функции main.
@@ -27,23 +27,23 @@ func init() {
 	}
 
 	// Получение URL-адреса для API цифрового профиля и токена доступа
-	digitalProfileUrl = os.Getenv("DIGITAL_PROFILE_BASE_URL")
+	digitalProfileURL = os.Getenv("DIGITAL_PROFILE_BASE_URL")
 	digitalProfileBearer = "Bearer " + os.Getenv("DIGITAL_PROFILE_API_TOKEN")
 
 	// Получение URL-адреса для платформы Visiology и токена доступа
-	visiologyUrl = os.Getenv("VISIOLOGY_BASE_URL")
+	visiologyURL = os.Getenv("VISIOLOGY_BASE_URL")
 	visiologyBearer = "Bearer " + os.Getenv("VISIOLOGY_API_TOKEN")
 
 	// Получение версии API Visiology
-	visiologyApiVersion = os.Getenv("VISIOLOGY_API_VERSION")
+	visiologyAPIVersion = os.Getenv("VISIOLOGY_API_VERSION")
 }
 
 // main является точкой входа в программу. Она инициализирует необходимые переменные,
 // получает данные из API цифрового профиля и отправляет данные на платформу Visiology.
 func main() {
 	// Получение ответа от API цифрового профиля
-	digitalProfileResponse := digitalprofile.GetHandler(digitalProfileUrl, digitalProfileBearer)
+	digitalProfileResponse := digitalprofile.GetHandler(digitalProfileURL, digitalProfileBearer)
 
 	// Отправка ответа на платформу Visiology с использованием маркера доступа и версии API
-	defer visiology.PostHandler(digitalProfileResponse, visiologyUrl, visiologyApiVersion, visiologyBearer)
+	defer visiology.PostHandler(digitalProfileResponse, visiologyURL, visiologyAPIVersion, visiologyBearer)
 }

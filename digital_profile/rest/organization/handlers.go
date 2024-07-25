@@ -9,6 +9,7 @@ import (
 	"visiologyDataUpdate/digital_profile/structs"
 )
 
+// GetResponse - это структура, представляющей ответ от API цифрового профиля.
 type GetResponse struct {
 	Count         int                    `json:"count"`
 	Next          any                    `json:"next"`
@@ -25,11 +26,11 @@ type GetResponse struct {
 //
 // Возвращаемое значение:
 // - GetResponse: Структура, содержащая данные организаций, полученные из ответа API цифрового профиля.
-func GetHandler(digitalProfileUrl, digitalProfileBearer string) GetResponse {
+func GetHandler(digitalProfileURL, digitalProfileBearer string) GetResponse {
 	// Создание нового HTTP-запроса
-	req, err := http.NewRequest("GET", digitalProfileUrl+"organizations", nil)
+	req, err := http.NewRequest("GET", digitalProfileURL+"organizations", nil)
 	if err != nil {
-		log.Fatal("Ошибка: %v", err)
+		log.Fatalf("Ошибка: %v", err)
 	}
 
 	// Добавление маркера доступа в заголовок запроса
@@ -39,20 +40,25 @@ func GetHandler(digitalProfileUrl, digitalProfileBearer string) GetResponse {
 	client := &http.Client{}
 
 	// Отправка HTTP-запроса и получение ответа
-	resp, err := client.Do(req)
+	resp, err := client.Do(req) //nolint:bodyclose
 	if err != nil {
 		log.Fatal("Ошибка в ответе.\n[ERROR] -", err)
 	}
 
 	// Закрытие тела ответа после завершения работы с ним
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			log.Fatal("Ошибка закрытия тела", err)
+		}
+	}(resp.Body)
 
 	// Проверка статуса HTTP-ответа
 	if resp.StatusCode != http.StatusOK {
 		// Чтение тела ответа в случае некорректного статуса HTTP
 		bodyBytes, err := io.ReadAll(resp.Body)
 		if err != nil {
-			log.Fatal("Ошибка во время чтения тела ответа:", err)
+			log.Panic("Ошибка во время чтения тела ответа:", err)
 		}
 
 		// Вывод статуса HTTP и тела ответа
@@ -66,12 +72,15 @@ func GetHandler(digitalProfileUrl, digitalProfileBearer string) GetResponse {
 	// Чтение тела ответа
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatal("Ошибка во время обработки JSON:", err)
+		log.Panic("Ошибка во время обработки JSON:", err)
 	}
 
 	// Десериализация тела ответа в структуру GetResponse
 	var response GetResponse
-	json.Unmarshal(body, &response)
+	err = json.Unmarshal(body, &response)
+	if err != nil {
+		return GetResponse{}
+	}
 
 	// Возврат структуры GetResponse
 	return response
