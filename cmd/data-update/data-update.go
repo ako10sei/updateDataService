@@ -3,9 +3,10 @@ package main
 import (
 	"github.com/joho/godotenv"
 	"log"
+	"log/slog"
 	"os"
-	digitalprofile "visiologyDataUpdate/digital_profile/rest/organization"
-	visiology "visiologyDataUpdate/visiology/rest/organization"
+	digitalprofile "visiologyDataUpdate/internal/digital_profile/handlers"
+	visiology "visiologyDataUpdate/internal/visiology/handlers"
 )
 
 var (
@@ -41,8 +42,12 @@ func init() {
 // main является точкой входа в программу. Она инициализирует необходимые переменные,
 // получает данные из API цифрового профиля и отправляет данные на платформу Visiology.
 func main() {
+	// Инициализация логгера
+	logger := slog.Default()
+	logger.Info("Получение ответа от API цифрового профиля")
+	logger.Info("URL: %s, Bearer: %s", digitalProfileURL, digitalProfileBearer)
 	// Получение ответа от API цифрового профиля
-	digitalProfileResponse := digitalprofile.GetHandler(digitalProfileURL, digitalProfileBearer)
+	digitalProfileResponse := digitalprofile.GetHandler(digitalProfileURL, digitalProfileBearer, logger)
 
 	// Отправка ответа на платформу Visiology с использованием маркера доступа и версии API
 	defer visiology.PostHandler(digitalProfileResponse, visiologyURL, visiologyAPIVersion, visiologyBearer)

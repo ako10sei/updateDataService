@@ -1,12 +1,12 @@
-package organization
+package handlers
 
 import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"net/http"
-	"visiologyDataUpdate/digital_profile/structs"
+	"visiologyDataUpdate/internal/digital_profile/structs"
 )
 
 // GetResponse - это структура, представляющей ответ от API цифрового профиля.
@@ -21,16 +21,18 @@ type GetResponse struct {
 // обрабатывает ответ и возвращает структуру GetResponse, содержащую данные организаций.
 //
 // Параметры:
-// - digitalProfileUrl: Строка, представляющая базовый URL API цифрового профиля.
+// - digitalProfileURL: Строка, представляющая базовый URL API цифрового профиля.
 // - digitalProfileBearer: Строка, представляющая токен доступа для API цифрового профиля.
+// - logger: *slog.Logger: инструмент, используемый для логирования процессов.
 //
 // Возвращаемое значение:
 // - GetResponse: Структура, содержащая данные организаций, полученные из ответа API цифрового профиля.
-func GetHandler(digitalProfileURL, digitalProfileBearer string) GetResponse {
+func GetHandler(digitalProfileURL, digitalProfileBearer string, logger *slog.Logger) GetResponse {
 	// Создание нового HTTP-запроса
+	logger.Info("Отправка GET-запроса на API цифрового профиля")
 	req, err := http.NewRequest("GET", digitalProfileURL+"organizations", nil)
 	if err != nil {
-		log.Fatalf("Ошибка: %v", err)
+		logger.Error("Ошибка создания HTTP-запроса:", "error", err)
 	}
 
 	// Добавление маркера доступа в заголовок запроса
@@ -42,14 +44,14 @@ func GetHandler(digitalProfileURL, digitalProfileBearer string) GetResponse {
 	// Отправка HTTP-запроса и получение ответа
 	resp, err := client.Do(req) //nolint:bodyclose
 	if err != nil {
-		log.Fatal("Ошибка в ответе.\n[ERROR] -", err)
+		logger.Error("Ошибка при отправке HTTP-запроса:", "error", err)
 	}
 
 	// Закрытие тела ответа после завершения работы с ним
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
 		if err != nil {
-			log.Fatal("Ошибка закрытия тела", err)
+			logger.Error("Ошибка закрытия тела ответа:", "error", err)
 		}
 	}(resp.Body)
 
@@ -58,7 +60,7 @@ func GetHandler(digitalProfileURL, digitalProfileBearer string) GetResponse {
 		// Чтение тела ответа в случае некорректного статуса HTTP
 		bodyBytes, err := io.ReadAll(resp.Body)
 		if err != nil {
-			log.Panic("Ошибка во время чтения тела ответа:", err)
+			logger.Error("Ошибка во время чтения тела ответа:", "error", err)
 		}
 
 		// Вывод статуса HTTP и тела ответа
@@ -72,7 +74,7 @@ func GetHandler(digitalProfileURL, digitalProfileBearer string) GetResponse {
 	// Чтение тела ответа
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Panic("Ошибка во время обработки JSON:", err)
+		logger.Error("Ошибка во время чтения тела ответа:", "error", err)
 	}
 
 	// Десериализация тела ответа в структуру GetResponse
@@ -83,5 +85,6 @@ func GetHandler(digitalProfileURL, digitalProfileBearer string) GetResponse {
 	}
 
 	// Возврат структуры GetResponse
+	logger.Info("Ответ получен успешно", "count", response.Count)
 	return response
 }
