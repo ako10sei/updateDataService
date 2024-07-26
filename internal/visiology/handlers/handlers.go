@@ -1,4 +1,4 @@
-package organization
+package handlers
 
 import (
 	"bytes"
@@ -7,11 +7,11 @@ import (
 	"io"
 	"log"
 	"net/http"
-	digitalprofile "visiologyDataUpdate/digital_profile/rest/organization"
-	"visiologyDataUpdate/visiology/structs"
+	digitalprofile "visiologyDataUpdate/internal/digital_profile/handlers"
+	visiology "visiologyDataUpdate/internal/visiology/structs"
 )
 
-// OrgIDs формуирует массив id организаций валидных для обработки и обновления по данным ЦП.
+// OrgIDs формуирует срез id организаций валидных для обработки и обновления по данным ЦП.
 var OrgIDs = []int{3, 27, 11, 12, 5, 17, 22, 7, 21, 20, 13, 10, 24, 14, 15, 16, 18, 6, 19, 9, 8, 30, 43}
 
 // maxIterations ограничивает число итераций для обработки организаций.
@@ -36,12 +36,11 @@ func PostHandler(
 	// TODO: Реализовать передачу параметров: Проектная мощность, Филиалы.
 	// TODO: Сделать логирование всех процессов в работе с цифровым профилем и отправки запросов в Visiology.
 	// Инициализация переменных
-	var column structs.Column
+	var column visiology.Column
 	var fields = column.GetAllFields()
 	var rownum = 0
-	// Создание тела запроса, содержащего данные организаций
 	var requestBody []map[string]any
-
+	// Создание тела запроса, содержащего данные организаций
 	for rownum != maxIterations+1 {
 		for _, org := range digitalProfileResponse.Organizations {
 			if rownum > maxIterations {
