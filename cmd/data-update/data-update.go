@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"os"
 	digitalprofile "visiologyDataUpdate/internal/digital_profile/handlers"
+	digitalprofiletoken "visiologyDataUpdate/internal/digital_profile/token"
 	visiology "visiologyDataUpdate/internal/visiology/handlers"
 )
 
@@ -29,7 +30,7 @@ func init() {
 
 	// Получение URL-адреса для API цифрового профиля и токена доступа
 	digitalProfileURL = os.Getenv("DIGITAL_PROFILE_BASE_URL")
-	digitalProfileBearer = "Bearer " + os.Getenv("DIGITAL_PROFILE_API_TOKEN")
+	digitalProfileBearer = "Bearer " + digitalprofiletoken.GetToken(digitalProfileURL)
 
 	// Получение URL-адреса для платформы Visiology и токена доступа
 	visiologyURL = os.Getenv("VISIOLOGY_BASE_URL")

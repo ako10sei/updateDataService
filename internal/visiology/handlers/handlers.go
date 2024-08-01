@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	digitalprofile "visiologyDataUpdate/internal/digital_profile/handlers"
+	"visiologyDataUpdate/internal/digital_profile/structs"
 	visiology "visiologyDataUpdate/internal/visiology/structs"
 )
 
@@ -41,6 +42,8 @@ func PostHandler(
 	var rownum = 0
 	var requestBody []map[string]any
 	// Создание тела запроса, содержащего данные организаций
+	digitalProfileResponse.Organizations = addFilials(digitalProfileResponse.Organizations, OrgIDs)
+
 	for rownum != maxIterations+1 {
 		for _, org := range digitalProfileResponse.Organizations {
 			if rownum > maxIterations {
@@ -48,7 +51,7 @@ func PostHandler(
 			}
 			// Т.к. необходимо отправлять данные только для указанных идентификаторов организаций (см. OrgIds),
 			// Требуется добавить проверку на работу с указанными идентификаторами.
-			// В случае, если строится дата для оргнизации, которая не входит в OrgIds,
+			// В случае, если строятся данные для оргнизации, которая не входит в OrgIds,
 			// То условие не пропустит данную организацию для построения JSON, который далее отправится в Visiology.
 			if org.ID == OrgIDs[rownum] {
 				for _, field := range fields {
@@ -113,4 +116,16 @@ func PostHandler(
 			log.Panic("Ошибка во время чтения тела ответа:", err)
 		}
 	}
+}
+
+func addFilials(organizations []structs.Organization, orgIDs []int) []structs.Organization {
+	for _, id := range orgIDs {
+		for _, org := range organizations {
+			if org.Parent == float64(id) {
+				neddedOrg := organizations[id]
+				fmt.Println(neddedOrg)
+			}
+		}
+	}
+	return organizations
 }
