@@ -78,7 +78,7 @@ func PostHandler(
 	if err != nil {
 		return
 	}
-	// Добавление заголовков HTTP-запросаsudo apt update
+	// Добавление заголовков HTTP-запроса
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("Content-Length", fmt.Sprintf("%d", len(jsonBody)))
 	req.Header.Add("Authorization", visiologyBearer)
