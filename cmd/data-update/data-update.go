@@ -8,6 +8,7 @@ import (
 	digitalprofile "visiologyDataUpdate/internal/digital_profile/handlers"
 	digitalprofiletoken "visiologyDataUpdate/internal/digital_profile/token"
 	visiology "visiologyDataUpdate/internal/visiology/handlers"
+	visiologytoken "visiologyDataUpdate/internal/visiology/token"
 )
 
 var (
@@ -34,7 +35,7 @@ func init() {
 
 	// Получение URL-адреса для платформы Visiology и токена доступа
 	visiologyURL = os.Getenv("VISIOLOGY_BASE_URL")
-	visiologyBearer = "Bearer " + os.Getenv("VISIOLOGY_API_TOKEN")
+	visiologyBearer = "Bearer " + visiologytoken.GetToken(visiologyURL)
 
 	// Получение версии API Visiology
 	visiologyAPIVersion = os.Getenv("VISIOLOGY_API_VERSION")

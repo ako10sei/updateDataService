@@ -42,8 +42,7 @@ func PostHandler(
 	var rownum = 0
 	var requestBody []map[string]any
 	// Создание тела запроса, содержащего данные организаций
-	digitalProfileResponse.Organizations = addFilials(digitalProfileResponse.Organizations, OrgIDs)
-
+	addFilials(digitalProfileResponse.Organizations, OrgIDs)
 	for rownum != maxIterations+1 {
 		for _, org := range digitalProfileResponse.Organizations {
 			if rownum > maxIterations {
@@ -77,9 +76,9 @@ func PostHandler(
 	if err != nil {
 		return
 	}
-
+	fmt.Println(string(jsonBody))
 	// Создание HTTP-запроса с телом запроса
-	req, err := http.NewRequest("POST", visiologyURL+"/update", bytes.NewBuffer(jsonBody))
+	req, err := http.NewRequest("POST", visiologyURL+"viqube/databases/DB/tables/KHV_SPO/records/update", bytes.NewBuffer(jsonBody))
 	if err != nil {
 		return
 	}
