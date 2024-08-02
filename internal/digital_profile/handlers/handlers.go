@@ -30,7 +30,7 @@ type GetResponse struct {
 func GetHandler(digitalProfileURL, digitalProfileBearer string, logger *slog.Logger) GetResponse {
 	// Создание нового HTTP-запроса
 	logger.Info("Отправка GET-запроса на API цифрового профиля")
-	req, err := http.NewRequest("GET", digitalProfileURL+"organizations", nil)
+	req, err := http.NewRequest("GET", digitalProfileURL+"organizations", http.NoBody)
 	if err != nil {
 		logger.Error("Ошибка создания HTTP-запроса:", "error", err)
 	}
@@ -49,7 +49,7 @@ func GetHandler(digitalProfileURL, digitalProfileBearer string, logger *slog.Log
 
 	// Закрытие тела ответа после завершения работы с ним
 	defer func(Body io.ReadCloser) {
-		err := Body.Close()
+		err = Body.Close()
 		if err != nil {
 			logger.Error("Ошибка закрытия тела ответа:", "error", err)
 		}

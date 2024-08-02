@@ -4,23 +4,28 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/joho/godotenv"
 	"io"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
+
+	"github.com/joho/godotenv"
 )
 
 const (
 	grantType    = "password"
-	scope        = "openid profile email roles viqube_api viqubeadmin_api core_logic_facade dashboards_export_service script_service migration_service_api data_collection"
+	scope        = "openid profile email roles viqube_api viqubeadmin_api core_logic_facade dashboards_export_service script_service migration_service_api data_collection" //nolint:lll
 	responseType = "id_token token"
 )
 
-var (
-	param = url.Values{}
-)
+var param = url.Values{
+	"grant_type":    {grantType},
+	"scope":         {scope},
+	"response_type": {responseType},
+	"username":      {},
+	"password":      {},
+}
 
 func init() {
 	err := godotenv.Load()
@@ -28,12 +33,9 @@ func init() {
 		// Вывод ошибки и завершение программы, если файл .env не удалось загрузить
 		log.Fatal("Ошибка загрузки файла .env")
 	}
-	param.Set("grant_type", grantType)
-	param.Set("scope", scope)
-	param.Set("response_type", responseType)
+
 	param.Set("username", os.Getenv("VISIOLOGY_USERNAME"))
 	param.Set("password", os.Getenv("VISIOLOGY_PASSWORD"))
-
 }
 
 type Token struct {
@@ -83,7 +85,7 @@ func GetToken(visiologyURL string) string {
 		// Чтение тела ответа в случае некорректного статуса HTTP
 		bodyBytes, err := io.ReadAll(resp.Body)
 		if err != nil {
-			log.Fatal("Ошибка во время чтения тела ответа:", "error", err)
+			log.Panic("Ошибка во время чтения тела ответа:", "error", err)
 		}
 		// Вывод статуса HTTP и тела ответа
 		fmt.Println("Non-ok HTTP status:", resp.StatusCode)
@@ -93,7 +95,7 @@ func GetToken(visiologyURL string) string {
 	// Чтение тела ответа
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatal("Ошибка во время чтения тела ответа:", "error", err)
+		log.Panic("Ошибка во время чтения тела ответа:", "error", err)
 	}
 
 	var token Token
@@ -103,7 +105,7 @@ func GetToken(visiologyURL string) string {
 		log.Println("Request:", req)
 		log.Println("GetResponse body:", string(body))
 		log.Println("visiology_token")
-		log.Fatal("Ошибка десериализации тела ответа:", "error", err)
+		log.Panic("Ошибка десериализации тела ответа:", "error", err)
 	}
 	return token.AccessToken
 }

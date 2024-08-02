@@ -1,7 +1,6 @@
 package main
 
 import (
-	"github.com/joho/godotenv"
 	"log"
 	"log/slog"
 	"os"
@@ -9,6 +8,8 @@ import (
 	digitalprofiletoken "visiologyDataUpdate/internal/digital_profile/token"
 	visiology "visiologyDataUpdate/internal/visiology/handlers"
 	visiologytoken "visiologyDataUpdate/internal/visiology/token"
+
+	"github.com/joho/godotenv"
 )
 
 var (

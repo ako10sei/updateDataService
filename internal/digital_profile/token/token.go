@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/joho/godotenv"
 	"io"
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/joho/godotenv"
 )
 
 const (
@@ -83,7 +84,7 @@ func GetToken(digitalProfileURL string) string {
 		// Чтение тела ответа в случае некорректного статуса HTTP
 		bodyBytes, err := io.ReadAll(resp.Body)
 		if err != nil {
-			log.Fatal("Ошибка во время чтения тела ответа:", "error", err)
+			log.Panic("Ошибка во время чтения тела ответа:", "error", err)
 		}
 		// Вывод статуса HTTP и тела ответа
 		fmt.Println("Non-ok HTTP status:", resp.StatusCode)
@@ -93,7 +94,7 @@ func GetToken(digitalProfileURL string) string {
 	// Чтение тела ответа
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatal("Ошибка во время чтения тела ответа:", "error", err)
+		log.Panic("Ошибка во время чтения тела ответа:", "error", err)
 	}
 
 	var token Token
@@ -103,7 +104,7 @@ func GetToken(digitalProfileURL string) string {
 		log.Println("Request:", req)
 		log.Println("GetResponse body:", string(body))
 		log.Println("digital_profile_token")
-		log.Fatal("Ошибка десериализации тела ответа:", "error", err)
+		log.Panic("Ошибка десериализации тела ответа:", "error", err)
 	}
 	return token.AccessToken
 }

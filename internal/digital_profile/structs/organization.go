@@ -17,7 +17,7 @@ type Organization struct {
 	FAddressFull  any      `json:"f_address_full"`    // Полный фактический адрес организации
 	UAddressFull  any      `json:"u_address_full"`    // Полный юридический адрес организации
 	TerritoryName string   `json:"territory_name"`    // Наименование района
-	Parent        any      `json:"parent"`            // Родительская организация
+	Parent        int      `json:"parent"`            // Родительская организация
 	MaxOccupancy  int      `json:"maximum_occupancy"` // Проектная мощность организации
 	Filials       []string // Филиалы организации
 }

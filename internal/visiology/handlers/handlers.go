@@ -8,7 +8,6 @@ import (
 	"log"
 	"net/http"
 	digitalprofile "visiologyDataUpdate/internal/digital_profile/handlers"
-	"visiologyDataUpdate/internal/digital_profile/structs"
 	visiology "visiologyDataUpdate/internal/visiology/structs"
 )
 
@@ -34,15 +33,12 @@ func PostHandler(
 	visiologyAPIVersion,
 	visiologyBearer string) {
 
-	// TODO: Реализовать передачу параметров: Проектная мощность, Филиалы.
-	// TODO: Сделать логирование всех процессов в работе с цифровым профилем и отправки запросов в Visiology.
 	// Инициализация переменных
 	var column visiology.Column
 	var fields = column.GetAllFields()
 	var rownum = 0
 	var requestBody []map[string]any
 	// Создание тела запроса, содержащего данные организаций
-	addFilials(digitalProfileResponse.Organizations, OrgIDs)
 	for rownum != maxIterations+1 {
 		for _, org := range digitalProfileResponse.Organizations {
 			if rownum > maxIterations {
@@ -82,7 +78,7 @@ func PostHandler(
 	if err != nil {
 		return
 	}
-	// Добавление заголовков HTTP-запроса
+	// Добавление заголовков HTTP-запросаsudo apt update
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("Content-Length", fmt.Sprintf("%d", len(jsonBody)))
 	req.Header.Add("Authorization", visiologyBearer)
@@ -115,16 +111,4 @@ func PostHandler(
 			log.Panic("Ошибка во время чтения тела ответа:", err)
 		}
 	}
-}
-
-func addFilials(organizations []structs.Organization, orgIDs []int) []structs.Organization {
-	for _, id := range orgIDs {
-		for _, org := range organizations {
-			if org.Parent == float64(id) {
-				neddedOrg := organizations[id]
-				fmt.Println(neddedOrg)
-			}
-		}
-	}
-	return organizations
 }
