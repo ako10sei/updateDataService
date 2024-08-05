@@ -4,13 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/joho/godotenv"
 	"io"
 	"net/http"
 	"os"
-
-	"visiologyDataUpdate/logger"
-
-	"github.com/joho/godotenv"
+	"visiologyDataUpdate/internal/log"
 )
 
 const (
@@ -25,7 +23,7 @@ var (
 // init выполняется при инициализации пакета и загружает переменные окружения.
 func init() {
 	if err := godotenv.Load(); err != nil {
-		logger.Fatal("Ошибка загрузки файла .env", "error: ", err)
+		log.Fatal("Ошибка загрузки файла .env", "error: ", err)
 	}
 
 	body = createRequestBody(grantType,
@@ -54,7 +52,7 @@ type Token struct {
 
 // GetToken получает токен доступа из указанного URL.
 func GetToken(digitalProfileURL string) (string, error) {
-	logger.Debug("Отправка запроса на получение токена", "URL: ", digitalProfileURL)
+	log.Debug("Отправка запроса на получение токена", "URL: ", digitalProfileURL)
 
 	req, err := http.NewRequest("POST", digitalProfileURL+"oauth2/token/", bytes.NewBuffer(body))
 	if err != nil {
@@ -78,7 +76,7 @@ func GetToken(digitalProfileURL string) (string, error) {
 		return "", fmt.Errorf("ошибка десериализации тела ответа: %w", err)
 	}
 
-	logger.Info("Токен доступа успешно получен", "accessToken: ", token.AccessToken)
+	log.Info("Токен доступа успешно получен", "accessToken: ", token.AccessToken)
 	return token.AccessToken, nil
 }
 
@@ -86,15 +84,15 @@ func GetToken(digitalProfileURL string) (string, error) {
 func handleNonOKResponse(resp *http.Response) {
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		logger.Error("Ошибка во время чтения тела ответа", "error: ", err)
+		log.Error("Ошибка во время чтения тела ответа", "error: ", err)
 		return
 	}
-	logger.Error("Некорректный статус HTTP", "status: ", resp.StatusCode, "body: ", string(bodyBytes))
+	log.Error("Некорректный статус HTTP", "status: ", resp.StatusCode, "body: ", string(bodyBytes))
 }
 
 // closeResponse закрывает тело ответа и логирует ошибку, если она произошла.
 func closeResponse(body io.ReadCloser) {
 	if err := body.Close(); err != nil {
-		logger.Error("Ошибка закрытия тела ответа", "error: ", err)
+		log.Error("Ошибка закрытия тела ответа", "error: ", err)
 	}
 }
