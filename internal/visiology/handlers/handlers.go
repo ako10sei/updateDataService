@@ -43,14 +43,13 @@ func PostHandler(
 
 	jsonBody, err := json.MarshalIndent(visiologyRequestBody, "", " ")
 	if err != nil {
-		log.Error("Ошибка при маршалировании JSON тела запроса", "error", err)
+		log.Error("Ошибка при маршалировании JSON тела запроса", "error: ", err)
 		return
 	}
 
 	// Проверяем переменную окружения DEBUG
 	if os.Getenv("DEBUG") == "True" {
 		// Если DEBUG=True, выводим тело запроса и не отправляем его
-		fmt.Println("Тело запроса (тестовый режим):", string(jsonBody))
 		log.Debug("Сформированное тело запроса для Visiology (тестовый режим): ", "jsonBody", string(jsonBody))
 		return // Возвращаемся и не отправляем запрос
 	}
@@ -131,7 +130,7 @@ func sendRequest(visiologyURL, visiologyAPIVersion, visiologyBearer string, json
 // closeResponse закрывает тело ответа и логирует ошибку, если она произошла.
 func closeResponse(body io.ReadCloser) {
 	if err := body.Close(); err != nil {
-		log.Error("Ошибка закрытия тела ответа", "error", err)
+		log.Error("Ошибка закрытия тела ответа", "error: ", err)
 	}
 }
 
@@ -139,8 +138,8 @@ func closeResponse(body io.ReadCloser) {
 func handleNonOkResponse(resp *http.Response) {
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatal("Ошибка при чтении тела ответа", "error", err)
+		log.Fatal("Ошибка при чтении тела ответа", "error: ", err)
 	}
 
-	log.Error("Некорректный статус HTTP", "status", resp.StatusCode, "body", string(bodyBytes))
+	log.Error("Некорректный статус HTTP", "status: ", resp.StatusCode, "body: ", string(bodyBytes))
 }
