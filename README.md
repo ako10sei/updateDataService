@@ -16,11 +16,10 @@
 ```bash
 git clone https://bitbucket.webizi.ru/scm/~sashalom666/visiologyupdategolang.git
 ```
-4. **Установите пакеты Go** с помощью команды `go get` для загрузки необходимых пакетов:
+4. **Установите пакеты Go** с помощью команды для загрузки необходимых пакетов:
 
 ```bash
-go get github.com/joho/godotenv
-go get github.com/fatih/color
+go mod vendor
 ````
 ## Переменные окружения
 
