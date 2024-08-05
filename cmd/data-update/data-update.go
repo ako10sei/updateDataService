@@ -1,54 +1,80 @@
 package main
 
 import (
-	"github.com/joho/godotenv"
-	"log"
-	"log/slog"
 	"os"
-	digitalprofile "visiologyDataUpdate/internal/digital_profile/handlers"
-	visiology "visiologyDataUpdate/internal/visiology/handlers"
+
+	digitalprofileHandlers "visiologyDataUpdate/internal/digital_profile/handlers"
+	digitalprofileToken "visiologyDataUpdate/internal/digital_profile/token"
+	visiologyHandlers "visiologyDataUpdate/internal/visiology/handlers"
+	visiologyToken "visiologyDataUpdate/internal/visiology/token"
+
+	"visiologyDataUpdate/logger"
+
+	"github.com/joho/godotenv"
 )
 
-var (
-	digitalProfileURL    string
-	digitalProfileBearer string
-	visiologyURL         string
-	visiologyBearer      string
-	visiologyAPIVersion  string
-)
-
-// init является специальной функцией, которая выполняется до функции main.
-// Она используется для инициализации переменных, выполнения начальных настроек или выполнения любых других необходимых инициализаций.
-func init() {
-	// Загрузка переменных окружения из файла .env
-	err := godotenv.Load()
-	if err != nil {
-		// Вывод ошибки и завершение программы, если файл .env не удалось загрузить
-		log.Fatal("Ошибка загрузки файла .env")
-	}
-
-	// Получение URL-адреса для API цифрового профиля и токена доступа
-	digitalProfileURL = os.Getenv("DIGITAL_PROFILE_BASE_URL")
-	digitalProfileBearer = "Bearer " + os.Getenv("DIGITAL_PROFILE_API_TOKEN")
-
-	// Получение URL-адреса для платформы Visiology и токена доступа
-	visiologyURL = os.Getenv("VISIOLOGY_BASE_URL")
-	visiologyBearer = "Bearer " + os.Getenv("VISIOLOGY_API_TOKEN")
-
-	// Получение версии API Visiology
-	visiologyAPIVersion = os.Getenv("VISIOLOGY_API_VERSION")
+type Config struct {
+	DigitalProfileURL    string
+	DigitalProfileBearer string
+	VisiologyURL         string
+	VisiologyBearer      string
+	VisiologyAPIVersion  string
 }
 
-// main является точкой входа в программу. Она инициализирует необходимые переменные,
-// получает данные из API цифрового профиля и отправляет данные на платформу Visiology.
-func main() {
-	// Инициализация логгера
-	logger := slog.Default()
-	logger.Info("Получение ответа от API цифрового профиля")
-	logger.Info("URL: %s, Bearer: %s", digitalProfileURL, digitalProfileBearer)
-	// Получение ответа от API цифрового профиля
-	digitalProfileResponse := digitalprofile.GetHandler(digitalProfileURL, digitalProfileBearer, logger)
+// loadEnv загружает переменные окружения и инициализирует конфигурацию.
+func loadEnv() (*Config, error) {
+	if err := godotenv.Load(); err != nil {
+		return nil, err
+	}
 
-	// Отправка ответа на платформу Visiology с использованием маркера доступа и версии API
-	defer visiology.PostHandler(digitalProfileResponse, visiologyURL, visiologyAPIVersion, visiologyBearer)
+	digitalProfileURL := os.Getenv("DIGITAL_PROFILE_BASE_URL")
+	digitalProfileBearer, err := digitalprofileToken.GetToken(digitalProfileURL)
+	if err != nil {
+		return nil, err
+	}
+
+	visiologyURL := os.Getenv("VISIOLOGY_BASE_URL")
+	visiologyBearer, err := visiologyToken.GetToken(visiologyURL)
+	if err != nil {
+		return nil, err
+	}
+
+	visiologyAPIVersion := os.Getenv("VISIOLOGY_API_VERSION")
+
+	return &Config{
+		DigitalProfileURL:    digitalProfileURL,
+		DigitalProfileBearer: "Bearer " + digitalProfileBearer,
+		VisiologyURL:         visiologyURL,
+		VisiologyBearer:      "Bearer " + visiologyBearer,
+		VisiologyAPIVersion:  visiologyAPIVersion,
+	}, nil
+}
+
+// main является точкой входа в программу.
+func main() {
+	// Инициализируем логгер
+	logger.InitLogger()
+	config, err := loadEnv()
+	if err != nil {
+		logger.Fatal("Ошибка загрузки файла .env: ", err)
+	}
+
+	// Проверяем, установлена ли переменная DEBUG в "True"
+	if os.Getenv("DEBUG") == "True" {
+		logger.Info("Отладка включена: Извлечение конфигурации")
+		logger.Info("URL цифрового профиля: ", config.DigitalProfileURL)
+		logger.Info("Bearer цифрового профиля: ", config.DigitalProfileBearer)
+		logger.Info("URL Visiology: ", config.VisiologyURL)
+		logger.Info("Bearer Visiology: ", config.VisiologyBearer)
+	}
+
+	logger.Info("Получение ответа от API цифрового профиля")
+
+	// Получение ответа от API цифрового профиля
+	digitalProfileResponse := digitalprofileHandlers.GetHandler(config.DigitalProfileURL, config.DigitalProfileBearer)
+
+	// Отправка ответа на платформу Visiology
+	visiologyHandlers.PostHandler(digitalProfileResponse, config.VisiologyURL, config.VisiologyAPIVersion, config.VisiologyBearer)
+
+	logger.Info("Программа завершена")
 }

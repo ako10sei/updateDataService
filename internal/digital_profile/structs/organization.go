@@ -1,6 +1,8 @@
 package structs
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type Organization struct {
 	ID            int    `json:"id"`                // Идентификатор организации
@@ -15,7 +17,7 @@ type Organization struct {
 	FAddressFull  any    `json:"f_address_full"`    // Полный фактический адрес организации
 	UAddressFull  any    `json:"u_address_full"`    // Полный юридический адрес организации
 	TerritoryName string `json:"territory_name"`    // Наименование района
-	Parent        any    `json:"parent"`            // Родительская организация
+	Parent        int    `json:"parent"`            // Родительская организация
 	MaxOccupancy  int    `json:"maximum_occupancy"` // Проектная мощность организации
 }
 
@@ -29,8 +31,6 @@ func (o *Organization) GetValueByField() map[string]any {
 		"Адрес фактический":  o.FAddressFull,
 		"Руководитель":       fmt.Sprintf("%s, %s, %s", o.Director, o.Email, o.Telephone),
 		"Район":              GetAreaIDByName(o.TerritoryName),
-		"Филиалы":            "",
-		"Сайт":               o.WebSite,
 		"Проектная мощность": o.MaxOccupancy,
 	}
 }

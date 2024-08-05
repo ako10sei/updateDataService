@@ -5,112 +5,142 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
+	"os"
+	"strings"
 	digitalprofile "visiologyDataUpdate/internal/digital_profile/handlers"
 	visiology "visiologyDataUpdate/internal/visiology/structs"
+	"visiologyDataUpdate/logger"
 )
 
-// OrgIDs формуирует срез id организаций валидных для обработки и обновления по данным ЦП.
-var OrgIDs = []int{3, 27, 11, 12, 5, 17, 22, 7, 21, 20, 13, 10, 24, 14, 15, 16, 18, 6, 19, 9, 8, 30, 43}
+// OrgIDs представляет собой список идентификаторов организаций, валидных для обработки.
+var (
+	OrgIDs = []int{
+		3, 27, 11, 12, 5, 17, 22, 7, 21, 20,
+		13, 10, 24, 14, 15, 16, 18, 6, 19,
+		9, 8, 30, 43,
+	}
+	requestBody []map[string]any
+	column      visiology.Column
+	fields      = column.GetAllFields()
+)
 
-// maxIterations ограничивает число итераций для обработки организаций.
-const maxIterations = 22
+// maxIterations ограничивает количество итераций для обработки организаций.
+const maxIterations = 23
 
 // PostHandler обрабатывает ответ от цифрового профиля и отправляет его на платформу Visiology.
-// Он создает тело запроса, содержащее данные организации, и отправляет его в виде POST-запроса по указанному URL-адресу Visiology.
-//
-// Параметры:
-// - digitalProfileResponse: Ответ от API цифрового профиля, содержащий данные об организациях.
-// - visiologyUrl: URL-адрес платформы Visiology.
-// - visiologyApiVersion: Версия API Visiology, которая будет использоваться.
-// - visiologyBearer: Токен авторизации для проверки подлинности с платформой Visiology.
-//
-//nolint:funlen
 func PostHandler(
 	digitalProfileResponse digitalprofile.GetResponse,
 	visiologyURL,
 	visiologyAPIVersion,
-	visiologyBearer string) {
+	visiologyBearer string,
+) {
+	visiologyRequestBody := createRequestBody(digitalProfileResponse)
+	if visiologyRequestBody == nil {
+		logger.Error("Не удалось создать тело запроса, нет валидных организаций для отправки.")
+		return
+	}
 
-	// TODO: Реализовать передачу параметров: Проектная мощность, Филиалы.
-	// TODO: Сделать логирование всех процессов в работе с цифровым профилем и отправки запросов в Visiology.
-	// Инициализация переменных
-	var column visiology.Column
-	var fields = column.GetAllFields()
-	var rownum = 0
-	var requestBody []map[string]any
-	// Создание тела запроса, содержащего данные организаций
-	for rownum != maxIterations+1 {
-		for _, org := range digitalProfileResponse.Organizations {
-			if rownum > maxIterations {
-				break
-			}
-			// Т.к. необходимо отправлять данные только для указанных идентификаторов организаций (см. OrgIds),
-			// Требуется добавить проверку на работу с указанными идентификаторами.
-			// В случае, если строится дата для оргнизации, которая не входит в OrgIds,
-			// То условие не пропустит данную организацию для построения JSON, который далее отправится в Visiology.
-			if org.ID == OrgIDs[rownum] {
+	jsonBody, err := json.MarshalIndent(visiologyRequestBody, "", " ")
+	if err != nil {
+		logger.Error("Ошибка при маршалировании JSON тела запроса", "error", err)
+		return
+	}
+
+	// Проверяем переменную окружения DEBUG
+	if os.Getenv("DEBUG") == "True" {
+		// Если DEBUG=True, выводим тело запроса и не отправляем его
+		fmt.Println("Тело запроса (тестовый режим):", string(jsonBody))
+		logger.Debug("Сформированное тело запроса для Visiology (тестовый режим): ", "jsonBody", string(jsonBody))
+		return // Возвращаемся и не отправляем запрос
+	}
+
+	// Запрашиваем подтверждение перед отправкой
+	fmt.Print("Приступить к обновлению данных Visiology? (Да/Нет): ")
+	var userResponse string
+	_, _ = fmt.Scanln(&userResponse) //nolint:errcheck
+	// Проверяем ввод пользователя
+	if strings.ToLower(userResponse) != "да" {
+		logger.Info("Обновление данных Visiology отменено пользователем.")
+		return // Прерываем выполнение, если пользователь не подтвердил
+	}
+
+	// В противном случае, отправляем запрос
+	response, err := sendRequest(visiologyURL, visiologyAPIVersion, visiologyBearer, jsonBody) //nolint:bodyclose
+	if err != nil {
+		logger.Error("Ошибка при отправке HTTP-запроса", "error: ", err)
+		return
+	}
+
+	defer closeResponse(response.Body)
+
+	if response.StatusCode != http.StatusOK {
+		handleNonOkResponse(response)
+	} else {
+		logger.Info("Данные успешно отправлены на Visiology")
+	}
+}
+
+// createRequestBody формирует тело запроса на основе ответа от API цифрового профиля.
+func createRequestBody(response digitalprofile.GetResponse) []map[string]any {
+
+	for rownum, orgID := range OrgIDs {
+		if rownum >= maxIterations {
+			break
+		}
+
+		for _, org := range response.Organizations {
+			if org.ID == orgID {
+				// Генерируем данные по всем полям для данной организации
 				for _, field := range fields {
 					rowData := map[string]any{
 						"rownum": rownum,
-						"values": []map[string]any{
-							{
-								"column": field,
-								"value":  org.GetValueByField()[field],
-							},
-						},
+						"values": []map[string]any{{
+							"column": field,
+							"value":  org.GetValueByField()[field],
+						}},
 					}
 					requestBody = append(requestBody, rowData)
 				}
-			} else {
-				continue
+				break // Прерывание после нахождения нужной организации
 			}
-			rownum++
 		}
 	}
-	// Маршалирование тела запроса в JSON-формате для отправки на сервер Visiology
-	jsonBody, err := json.Marshal(requestBody)
+
+	if len(requestBody) == 0 {
+		return nil // Нет данных для отправки
+	}
+	return requestBody
+}
+
+// sendRequest отправляет HTTP POST-запрос на указанный URL и возвращает ответ.
+func sendRequest(visiologyURL, visiologyAPIVersion, visiologyBearer string, jsonBody []byte) (*http.Response, error) {
+	req, err := http.NewRequest("POST", visiologyURL+"viqube/databases/DB/tables/KHV_SPO/records/update", bytes.NewBuffer(jsonBody))
 	if err != nil {
-		return
+		return nil, err
 	}
 
-	// Создание HTTP-запроса с телом запроса
-	req, err := http.NewRequest("POST", visiologyURL+"/update", bytes.NewBuffer(jsonBody))
-	if err != nil {
-		return
-	}
-	// Добавление заголовков HTTP-запроса
 	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Content-Length", fmt.Sprintf("%d", len(jsonBody)))
 	req.Header.Add("Authorization", visiologyBearer)
 	req.Header.Add("X-Api-Version", visiologyAPIVersion)
-	req.Header.Add("Host", "<calculated when request is sent>")
-	// Отправка HTTP-запроса и получение ответа
+
 	client := &http.Client{}
-	resp, err := client.Do(req) //nolint:bodyclose
+	return client.Do(req) //nolint:bodyclose
+}
+
+// closeResponse закрывает тело ответа и логирует ошибку, если она произошла.
+func closeResponse(body io.ReadCloser) {
+	if err := body.Close(); err != nil {
+		logger.Error("Ошибка закрытия тела ответа", "error", err)
+	}
+}
+
+// handleNonOkResponse обрабатывает некорректный статус HTTP-ответа.
+func handleNonOkResponse(resp *http.Response) {
+	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatal("Ошибка при отправке HTTP-запроса:", err)
-
-		return
+		logger.Fatal("Ошибка при чтении тела ответа", "error", err)
 	}
-	// Закрытие тела ответа после завершения работы с ним
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			log.Fatal("Ошибка закрытия тела ответа:", err)
-		}
-	}(resp.Body)
 
-	// Проверка статуса HTTP-ответа
-	if resp.StatusCode != http.StatusOK {
-		// Чтение тела ответа в случае некорректного статуса HTTP
-		bodyBytes, err := io.ReadAll(resp.Body)
-		// Вывод статуса HTTP и тела ответа
-		fmt.Println("Non-ok HTTP status:", resp.StatusCode)
-		fmt.Println("GetResponse body:", string(bodyBytes))
-		if err != nil {
-			log.Panic("Ошибка во время чтения тела ответа:", err)
-		}
-	}
+	logger.Error("Некорректный статус HTTP", "status", resp.StatusCode, "body", string(bodyBytes))
 }

@@ -2,14 +2,13 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
-	"log/slog"
 	"net/http"
 	"visiologyDataUpdate/internal/digital_profile/structs"
+	"visiologyDataUpdate/logger"
 )
 
-// GetResponse - это структура, представляющей ответ от API цифрового профиля.
+// GetResponse представляет ответ от API цифрового профиля.
 type GetResponse struct {
 	Count         int                    `json:"count"`
 	Next          any                    `json:"next"`
@@ -17,74 +16,74 @@ type GetResponse struct {
 	Organizations []structs.Organization `json:"results"`
 }
 
-// GetHandler является функцией, которая отправляет GET-запрос на указанный URL с указанным маркером доступа,
+// GetHandler отправляет GET-запрос на указанный URL с указанным маркером доступа,
 // обрабатывает ответ и возвращает структуру GetResponse, содержащую данные организаций.
-//
-// Параметры:
-// - digitalProfileURL: Строка, представляющая базовый URL API цифрового профиля.
-// - digitalProfileBearer: Строка, представляющая токен доступа для API цифрового профиля.
-// - logger: *slog.Logger: инструмент, используемый для логирования процессов.
-//
-// Возвращаемое значение:
-// - GetResponse: Структура, содержащая данные организаций, полученные из ответа API цифрового профиля.
-func GetHandler(digitalProfileURL, digitalProfileBearer string, logger *slog.Logger) GetResponse {
-	// Создание нового HTTP-запроса
-	logger.Info("Отправка GET-запроса на API цифрового профиля")
-	req, err := http.NewRequest("GET", digitalProfileURL+"organizations", nil)
+func GetHandler(digitalProfileURL, digitalProfileBearer string) GetResponse {
+	logger.Info("Отправка GET-запроса на API цифрового профиля", "url: ", digitalProfileURL+"organizations")
+
+	req, err := createRequest(digitalProfileURL+"organizations", digitalProfileBearer)
 	if err != nil {
-		logger.Error("Ошибка создания HTTP-запроса:", "error", err)
+		logger.Error("Ошибка создания HTTP-запроса", "error: ", err)
+		return GetResponse{}
 	}
 
-	// Добавление маркера доступа в заголовок запроса
-	req.Header.Add("Authorization", digitalProfileBearer)
-
-	// Создание нового HTTP-клиента
-	client := &http.Client{}
-
-	// Отправка HTTP-запроса и получение ответа
-	resp, err := client.Do(req) //nolint:bodyclose
+	resp, err := sendRequest(req) //nolint:bodyclose
 	if err != nil {
-		logger.Error("Ошибка при отправке HTTP-запроса:", "error", err)
+		return GetResponse{}
 	}
 
-	// Закрытие тела ответа после завершения работы с ним
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			logger.Error("Ошибка закрытия тела ответа:", "error", err)
-		}
-	}(resp.Body)
+	defer closeResponse(resp.Body)
 
-	// Проверка статуса HTTP-ответа
 	if resp.StatusCode != http.StatusOK {
-		// Чтение тела ответа в случае некорректного статуса HTTP
-		bodyBytes, err := io.ReadAll(resp.Body)
-		if err != nil {
-			logger.Error("Ошибка во время чтения тела ответа:", "error", err)
-		}
-
-		// Вывод статуса HTTP и тела ответа
-		fmt.Println("Non-ok HTTP status:", resp.StatusCode)
-		fmt.Println("GetResponse body:", string(bodyBytes))
-
-		// Возврат пустой структуры в случае некорректного статуса HTTP
+		handleNonOKResponse(resp)
 		return GetResponse{}
 	}
 
-	// Чтение тела ответа
-	body, err := io.ReadAll(resp.Body)
+	return parseResponse(resp.Body)
+}
+
+func createRequest(url, bearer string) (*http.Request, error) {
+	req, err := http.NewRequest("GET", url, http.NoBody)
 	if err != nil {
-		logger.Error("Ошибка во время чтения тела ответа:", "error", err)
+		return nil, err
+	}
+	req.Header.Add("Authorization", bearer)
+	return req, nil
+}
+
+func sendRequest(req *http.Request) (*http.Response, error) {
+	client := &http.Client{}
+	resp, err := client.Do(req) //nolint:bodyclose
+	return resp, err
+}
+
+func handleNonOKResponse(resp *http.Response) {
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		logger.Error("Ошибка во время чтения тела ответа", "error: ", err)
+	}
+	logger.Error("Некорректный статус HTTP", "status: ", resp.StatusCode, "body: ", string(bodyBytes))
+}
+
+func parseResponse(body io.ReadCloser) GetResponse {
+	data, err := io.ReadAll(body)
+	if err != nil {
+		logger.Error("Ошибка во время чтения тела ответа", "error: ", err)
+		return GetResponse{}
 	}
 
-	// Десериализация тела ответа в структуру GetResponse
 	var response GetResponse
-	err = json.Unmarshal(body, &response)
-	if err != nil {
+	if err := json.Unmarshal(data, &response); err != nil {
+		logger.Error("Ошибка десериализации ответа", "error: ", err, "body: ", string(data))
 		return GetResponse{}
 	}
 
-	// Возврат структуры GetResponse
-	logger.Info("Ответ получен успешно", "count", response.Count)
+	logger.Info("Ответ получен успешно", "count: ", response.Count)
 	return response
+}
+
+func closeResponse(body io.ReadCloser) {
+	if err := body.Close(); err != nil {
+		logger.Error("Ошибка закрытия тела ответа", "error: ", err)
+	}
 }

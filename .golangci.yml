@@ -1,0 +1,30 @@
+linters:
+  enable:
+    - bodyclose
+    - errcheck
+    - gocritic
+    - gofmt
+    - goimports
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - typecheck
+    - unused
+
+  disable-all: false
+
+issues:
+  exclude-use-default: false
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - errcheck
+        - gosecf
+        - unused
+
+linters-settings:
+  errcheck:
+    check-blank: true
+  govet:
+    check-shadowing: false
