@@ -16,6 +16,12 @@
 ```bash
 git clone https://bitbucket.webizi.ru/scm/~sashalom666/visiologyupdategolang.git
 ```
+4. **Установите пакеты Go** с помощью команды `go get` для загрузки необходимых пакетов:
+
+```bash
+go get github.com/joho/godotenv
+go get github.com/fatih/color
+````
 ## Переменные окружения
 
 1. **Создайте файл `.env`** в корне вашего проекта и добавьте в него переменные окружения, указанные в приведённом ниже
@@ -34,13 +40,6 @@ VISIOLOGY_API_VERSION=3.11
 DEBUG=True // Режим отладки. При значении флага False осуществляется функционал обновления данных портала.
 ```
 
-2. **Установите пакеты Go** с помощью команды `go get` для загрузки необходимых пакетов:
-
-```bash
-go get github.com/joho/godotenv
-go get github.com/fatih/color
-````
-
 ## Запуск проекта
 
-1. Выполните команду `go run main.go` в каталоге вашего проекта, чтобы запустить приложение.
+1. Выполните команду `go run cmd/data-update/data-update.go` в каталоге вашего проекта, чтобы запустить приложение.
