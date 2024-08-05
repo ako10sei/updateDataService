@@ -5,10 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
+
+	"visiologyDataUpdate/logger"
 
 	"github.com/joho/godotenv"
 )
@@ -19,7 +20,7 @@ const (
 	responseType = "id_token token"
 )
 
-var param = url.Values{
+var params = url.Values{
 	"grant_type":    {grantType},
 	"scope":         {scope},
 	"response_type": {responseType},
@@ -30,14 +31,14 @@ var param = url.Values{
 func init() {
 	err := godotenv.Load()
 	if err != nil {
-		// Вывод ошибки и завершение программы, если файл .env не удалось загрузить
-		log.Fatal("Ошибка загрузки файла .env")
+		logger.Fatal("Ошибка загрузки файла .env", "error", err)
 	}
 
-	param.Set("username", os.Getenv("VISIOLOGY_USERNAME"))
-	param.Set("password", os.Getenv("VISIOLOGY_PASSWORD"))
+	params.Set("username", os.Getenv("VISIOLOGY_USERNAME"))
+	params.Set("password", os.Getenv("VISIOLOGY_PASSWORD"))
 }
 
+// Token представляет токен доступа.
 type Token struct {
 	AccessToken string `json:"access_token"`
 	ExpiresIn   int    `json:"expires_in"`
@@ -46,66 +47,55 @@ type Token struct {
 }
 
 // GetToken получает токен доступа из указанного URL.
-// Функция отправляет POST-запрос на указанный URL с необходимыми параметрами,
-// включая идентификатор клиента, секрет клиента и область. Затем она читает тело ответа,
-// десериализует его в структуру Token и возвращает токен доступа.
-//
-// Если при отправке HTTP-запроса или чтении тела ответа возникает ошибка,
-// функция выводит сообщение об ошибке и завершает работу с ошибкой.
-//
-// Если HTTP-ответ имеет статус, отличный от 200 (OK), функция читает тело ответа,
-// выводит статус HTTP и тело ответа, а затем завершает работу с ошибкой.
-func GetToken(visiologyURL string) string {
-
-	req, err := http.NewRequest("POST", visiologyURL+"idsrv/connect/token", bytes.NewBufferString(param.Encode()))
+func GetToken(visiologyURL string) (string, error) {
+	req, err := http.NewRequest("POST", visiologyURL+"idsrv/connect/token", bytes.NewBufferString(params.Encode()))
 	if err != nil {
-		log.Fatal("Ошибка получения токена")
+		return "", fmt.Errorf("ошибка создания HTTP-запроса: %w", err)
 	}
+
 	req.Header.Add("Authorization", "Basic cHVibGljX3JvX2NsaWVudDpAOVkjbmckXXU+SF4zajY=")
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-	// Создание нового HTTP-клиента
+
 	client := &http.Client{}
 
-	// Отправка HTTP-запроса и получение ответа
 	resp, err := client.Do(req) //nolint:bodyclose
 	if err != nil {
-		log.Fatal("Ошибка при отправке HTTP-запроса:", "error", err)
+		return "", fmt.Errorf("ошибка при отправке HTTP-запроса: %w", err)
 	}
+	defer closeResponse(resp.Body)
 
-	// Закрытие тела ответа после завершения работы с ним
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			log.Fatal("Ошибка закрытия тела ответа:", "error", err)
-		}
-	}(resp.Body)
-
-	// Проверка статуса HTTP-ответа
 	if resp.StatusCode != http.StatusOK {
-		// Чтение тела ответа в случае некорректного статуса HTTP
-		bodyBytes, err := io.ReadAll(resp.Body)
-		if err != nil {
-			log.Panic("Ошибка во время чтения тела ответа:", "error", err)
-		}
-		// Вывод статуса HTTP и тела ответа
-		fmt.Println("Non-ok HTTP status:", resp.StatusCode)
-		fmt.Println("GetResponse body:", string(bodyBytes))
+		handleNonOKResponse(resp)
+		return "", fmt.Errorf("неверный статус ответа: %d", resp.StatusCode)
 	}
 
-	// Чтение тела ответа
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Panic("Ошибка во время чтения тела ответа:", "error", err)
+		return "", fmt.Errorf("ошибка чтения тела ответа: %w", err)
 	}
 
 	var token Token
-	// Десериализация тела ответа в структуру
-	err = json.Unmarshal(body, &token)
-	if err != nil {
-		log.Println("Request:", req)
-		log.Println("GetResponse body:", string(body))
-		log.Println("visiology_token")
-		log.Panic("Ошибка десериализации тела ответа:", "error", err)
+	if err := json.Unmarshal(body, &token); err != nil {
+		logger.Error("Ошибка десериализации тела ответа", "error", err, "body", string(body), "request", req)
+		return "", fmt.Errorf("ошибка десериализации тела ответа: %w", err)
 	}
-	return token.AccessToken
+
+	return token.AccessToken, nil
+}
+
+// closeResponse закрывает тело ответа и логирует ошибку, если она произошла.
+func closeResponse(body io.ReadCloser) {
+	if err := body.Close(); err != nil {
+		logger.Error("Ошибка закрытия тела ответа", "error", err)
+	}
+}
+
+// handleNonOKResponse обрабатывает ошибку сервера в случае ошибки
+func handleNonOKResponse(resp *http.Response) {
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		logger.Error("Ошибка во время чтения тела ответа", "error", err)
+		return
+	}
+	logger.Error("Некорректный статус HTTP", "status", resp.StatusCode, "body", string(bodyBytes))
 }

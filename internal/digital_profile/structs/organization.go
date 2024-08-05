@@ -5,21 +5,20 @@ import (
 )
 
 type Organization struct {
-	ID            int      `json:"id"`                // Идентификатор организации
-	Name          string   `json:"name"`              // Наименование организации
-	ShortName     string   `json:"short_name"`        // Краткое наименование организации
-	Ogrn          any      `json:"ogrn"`              // ОГРН организации
-	Director      any      `json:"director"`          // Руководитель организации
-	Telephone     any      `json:"telephone"`         // Телефон
-	Fax           any      `json:"fax"`               // Факс
-	Email         any      `json:"email"`             // Email
-	WebSite       any      `json:"web_site"`          // Web Site организации
-	FAddressFull  any      `json:"f_address_full"`    // Полный фактический адрес организации
-	UAddressFull  any      `json:"u_address_full"`    // Полный юридический адрес организации
-	TerritoryName string   `json:"territory_name"`    // Наименование района
-	Parent        int      `json:"parent"`            // Родительская организация
-	MaxOccupancy  int      `json:"maximum_occupancy"` // Проектная мощность организации
-	Filials       []string // Филиалы организации
+	ID            int    `json:"id"`                // Идентификатор организации
+	Name          string `json:"name"`              // Наименование организации
+	ShortName     string `json:"short_name"`        // Краткое наименование организации
+	Ogrn          any    `json:"ogrn"`              // ОГРН организации
+	Director      any    `json:"director"`          // Руководитель организации
+	Telephone     any    `json:"telephone"`         // Телефон
+	Fax           any    `json:"fax"`               // Факс
+	Email         any    `json:"email"`             // Email
+	WebSite       any    `json:"web_site"`          // Web Site организации
+	FAddressFull  any    `json:"f_address_full"`    // Полный фактический адрес организации
+	UAddressFull  any    `json:"u_address_full"`    // Полный юридический адрес организации
+	TerritoryName string `json:"territory_name"`    // Наименование района
+	Parent        int    `json:"parent"`            // Родительская организация
+	MaxOccupancy  int    `json:"maximum_occupancy"` // Проектная мощность организации
 }
 
 // GetValueByField возвращает карту, содержащую определенные поля структуры Organization
@@ -32,8 +31,6 @@ func (o *Organization) GetValueByField() map[string]any {
 		"Адрес фактический":  o.FAddressFull,
 		"Руководитель":       fmt.Sprintf("%s, %s, %s", o.Director, o.Email, o.Telephone),
 		"Район":              GetAreaIDByName(o.TerritoryName),
-		"Филиалы":            o.Filials,
-		"Сайт":               o.WebSite,
 		"Проектная мощность": o.MaxOccupancy,
 	}
 }
