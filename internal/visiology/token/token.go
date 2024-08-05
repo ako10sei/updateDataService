@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/joho/godotenv"
 	"io"
 	"net/http"
 	"net/url"
 	"os"
 	"visiologyDataUpdate/internal/log"
+
+	"github.com/joho/godotenv"
 )
 
 const (
