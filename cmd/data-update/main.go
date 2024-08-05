@@ -2,57 +2,17 @@ package main
 
 import (
 	"os"
+	conf "visiologyDataUpdate/internal/config"
 	digitalprofileHandlers "visiologyDataUpdate/internal/digital_profile/handlers"
-	digitalprofileToken "visiologyDataUpdate/internal/digital_profile/token"
 	"visiologyDataUpdate/internal/log"
 	visiologyHandlers "visiologyDataUpdate/internal/visiology/handlers"
-	visiologyToken "visiologyDataUpdate/internal/visiology/token"
-
-	"github.com/joho/godotenv"
 )
-
-type Config struct {
-	DigitalProfileURL    string
-	DigitalProfileBearer string
-	VisiologyURL         string
-	VisiologyBearer      string
-	VisiologyAPIVersion  string
-}
-
-// loadEnv загружает переменные окружения и инициализирует конфигурацию.
-func loadEnv() (*Config, error) {
-	if err := godotenv.Load(); err != nil {
-		return nil, err
-	}
-
-	digitalProfileURL := os.Getenv("DIGITAL_PROFILE_BASE_URL")
-	digitalProfileBearer, err := digitalprofileToken.GetToken(digitalProfileURL)
-	if err != nil {
-		return nil, err
-	}
-
-	visiologyURL := os.Getenv("VISIOLOGY_BASE_URL")
-	visiologyBearer, err := visiologyToken.GetToken(visiologyURL)
-	if err != nil {
-		return nil, err
-	}
-
-	visiologyAPIVersion := os.Getenv("VISIOLOGY_API_VERSION")
-
-	return &Config{
-		DigitalProfileURL:    digitalProfileURL,
-		DigitalProfileBearer: "Bearer " + digitalProfileBearer,
-		VisiologyURL:         visiologyURL,
-		VisiologyBearer:      "Bearer " + visiologyBearer,
-		VisiologyAPIVersion:  visiologyAPIVersion,
-	}, nil
-}
 
 // main является точкой входа в программу.
 func main() {
 	// Инициализируем логгер
 	log.InitLogger()
-	config, err := loadEnv()
+	config, err := conf.LoadEnv()
 	if err != nil {
 		log.Fatal("Ошибка загрузки файла .env: ", err)
 	}
