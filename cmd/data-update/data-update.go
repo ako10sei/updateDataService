@@ -2,13 +2,12 @@ package main
 
 import (
 	"os"
+	"visiologyDataUpdate/pkg/log"
 
 	digitalprofileHandlers "visiologyDataUpdate/internal/digital_profile/handlers"
 	digitalprofileToken "visiologyDataUpdate/internal/digital_profile/token"
 	visiologyHandlers "visiologyDataUpdate/internal/visiology/handlers"
 	visiologyToken "visiologyDataUpdate/internal/visiology/token"
-
-	"visiologyDataUpdate/logger"
 
 	"github.com/joho/godotenv"
 )
@@ -53,22 +52,22 @@ func loadEnv() (*Config, error) {
 // main является точкой входа в программу.
 func main() {
 	// Инициализируем логгер
-	logger.InitLogger()
+	log.InitLogger()
 	config, err := loadEnv()
 	if err != nil {
-		logger.Fatal("Ошибка загрузки файла .env: ", err)
+		log.Fatal("Ошибка загрузки файла .env: ", err)
 	}
 
 	// Проверяем, установлена ли переменная DEBUG в "True"
 	if os.Getenv("DEBUG") == "True" {
-		logger.Info("Отладка включена: Извлечение конфигурации")
-		logger.Info("URL цифрового профиля: ", config.DigitalProfileURL)
-		logger.Info("Bearer цифрового профиля: ", config.DigitalProfileBearer)
-		logger.Info("URL Visiology: ", config.VisiologyURL)
-		logger.Info("Bearer Visiology: ", config.VisiologyBearer)
+		log.Info("Отладка включена: Извлечение конфигурации")
+		log.Info("URL цифрового профиля: ", config.DigitalProfileURL)
+		log.Info("Bearer цифрового профиля: ", config.DigitalProfileBearer)
+		log.Info("URL Visiology: ", config.VisiologyURL)
+		log.Info("Bearer Visiology: ", config.VisiologyBearer)
 	}
 
-	logger.Info("Получение ответа от API цифрового профиля")
+	log.Info("Получение ответа от API цифрового профиля")
 
 	// Получение ответа от API цифрового профиля
 	digitalProfileResponse := digitalprofileHandlers.GetHandler(config.DigitalProfileURL, config.DigitalProfileBearer)
@@ -76,5 +75,5 @@ func main() {
 	// Отправка ответа на платформу Visiology
 	visiologyHandlers.PostHandler(digitalProfileResponse, config.VisiologyURL, config.VisiologyAPIVersion, config.VisiologyBearer)
 
-	logger.Info("Программа завершена")
+	log.Info("Программа завершена")
 }

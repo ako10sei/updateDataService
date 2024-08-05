@@ -5,7 +5,7 @@ import (
 	"io"
 	"net/http"
 	"visiologyDataUpdate/internal/digital_profile/structs"
-	"visiologyDataUpdate/logger"
+	"visiologyDataUpdate/pkg/log"
 )
 
 // GetResponse представляет ответ от API цифрового профиля.
@@ -19,11 +19,11 @@ type GetResponse struct {
 // GetHandler отправляет GET-запрос на указанный URL с указанным маркером доступа,
 // обрабатывает ответ и возвращает структуру GetResponse, содержащую данные организаций.
 func GetHandler(digitalProfileURL, digitalProfileBearer string) GetResponse {
-	logger.Info("Отправка GET-запроса на API цифрового профиля", "url: ", digitalProfileURL+"organizations")
+	log.Info("Отправка GET-запроса на API цифрового профиля", "url: ", digitalProfileURL+"organizations")
 
 	req, err := createRequest(digitalProfileURL+"organizations", digitalProfileBearer)
 	if err != nil {
-		logger.Error("Ошибка создания HTTP-запроса", "error: ", err)
+		log.Error("Ошибка создания HTTP-запроса", "error: ", err)
 		return GetResponse{}
 	}
 
@@ -60,30 +60,30 @@ func sendRequest(req *http.Request) (*http.Response, error) {
 func handleNonOKResponse(resp *http.Response) {
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		logger.Error("Ошибка во время чтения тела ответа", "error: ", err)
+		log.Error("Ошибка во время чтения тела ответа", "error: ", err)
 	}
-	logger.Error("Некорректный статус HTTP", "status: ", resp.StatusCode, "body: ", string(bodyBytes))
+	log.Error("Некорректный статус HTTP", "status: ", resp.StatusCode, "body: ", string(bodyBytes))
 }
 
 func parseResponse(body io.ReadCloser) GetResponse {
 	data, err := io.ReadAll(body)
 	if err != nil {
-		logger.Error("Ошибка во время чтения тела ответа", "error: ", err)
+		log.Error("Ошибка во время чтения тела ответа", "error: ", err)
 		return GetResponse{}
 	}
 
 	var response GetResponse
 	if err := json.Unmarshal(data, &response); err != nil {
-		logger.Error("Ошибка десериализации ответа", "error: ", err, "body: ", string(data))
+		log.Error("Ошибка десериализации ответа", "error: ", err, "body: ", string(data))
 		return GetResponse{}
 	}
 
-	logger.Info("Ответ получен успешно", "count: ", response.Count)
+	log.Info("Ответ получен успешно", "count: ", response.Count)
 	return response
 }
 
 func closeResponse(body io.ReadCloser) {
 	if err := body.Close(); err != nil {
-		logger.Error("Ошибка закрытия тела ответа", "error: ", err)
+		log.Error("Ошибка закрытия тела ответа", "error: ", err)
 	}
 }

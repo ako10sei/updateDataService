@@ -10,7 +10,7 @@ import (
 	"strings"
 	digitalprofile "visiologyDataUpdate/internal/digital_profile/handlers"
 	visiology "visiologyDataUpdate/internal/visiology/structs"
-	"visiologyDataUpdate/logger"
+	"visiologyDataUpdate/pkg/log"
 )
 
 // OrgIDs представляет собой список идентификаторов организаций, валидных для обработки.
@@ -37,13 +37,13 @@ func PostHandler(
 ) {
 	visiologyRequestBody := createRequestBody(digitalProfileResponse)
 	if visiologyRequestBody == nil {
-		logger.Error("Не удалось создать тело запроса, нет валидных организаций для отправки.")
+		log.Error("Не удалось создать тело запроса, нет валидных организаций для отправки.")
 		return
 	}
 
 	jsonBody, err := json.MarshalIndent(visiologyRequestBody, "", " ")
 	if err != nil {
-		logger.Error("Ошибка при маршалировании JSON тела запроса", "error", err)
+		log.Error("Ошибка при маршалировании JSON тела запроса", "error", err)
 		return
 	}
 
@@ -51,7 +51,7 @@ func PostHandler(
 	if os.Getenv("DEBUG") == "True" {
 		// Если DEBUG=True, выводим тело запроса и не отправляем его
 		fmt.Println("Тело запроса (тестовый режим):", string(jsonBody))
-		logger.Debug("Сформированное тело запроса для Visiology (тестовый режим): ", "jsonBody", string(jsonBody))
+		log.Debug("Сформированное тело запроса для Visiology (тестовый режим): ", "jsonBody", string(jsonBody))
 		return // Возвращаемся и не отправляем запрос
 	}
 
@@ -61,14 +61,14 @@ func PostHandler(
 	_, _ = fmt.Scanln(&userResponse) //nolint:errcheck
 	// Проверяем ввод пользователя
 	if strings.ToLower(userResponse) != "да" {
-		logger.Info("Обновление данных Visiology отменено пользователем.")
+		log.Info("Обновление данных Visiology отменено пользователем.")
 		return // Прерываем выполнение, если пользователь не подтвердил
 	}
 
 	// В противном случае, отправляем запрос
 	response, err := sendRequest(visiologyURL, visiologyAPIVersion, visiologyBearer, jsonBody) //nolint:bodyclose
 	if err != nil {
-		logger.Error("Ошибка при отправке HTTP-запроса", "error: ", err)
+		log.Error("Ошибка при отправке HTTP-запроса", "error: ", err)
 		return
 	}
 
@@ -77,7 +77,7 @@ func PostHandler(
 	if response.StatusCode != http.StatusOK {
 		handleNonOkResponse(response)
 	} else {
-		logger.Info("Данные успешно отправлены на Visiology")
+		log.Info("Данные успешно отправлены на Visiology")
 	}
 }
 
@@ -131,7 +131,7 @@ func sendRequest(visiologyURL, visiologyAPIVersion, visiologyBearer string, json
 // closeResponse закрывает тело ответа и логирует ошибку, если она произошла.
 func closeResponse(body io.ReadCloser) {
 	if err := body.Close(); err != nil {
-		logger.Error("Ошибка закрытия тела ответа", "error", err)
+		log.Error("Ошибка закрытия тела ответа", "error", err)
 	}
 }
 
@@ -139,8 +139,8 @@ func closeResponse(body io.ReadCloser) {
 func handleNonOkResponse(resp *http.Response) {
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		logger.Fatal("Ошибка при чтении тела ответа", "error", err)
+		log.Fatal("Ошибка при чтении тела ответа", "error", err)
 	}
 
-	logger.Error("Некорректный статус HTTP", "status", resp.StatusCode, "body", string(bodyBytes))
+	log.Error("Некорректный статус HTTP", "status", resp.StatusCode, "body", string(bodyBytes))
 }

@@ -8,8 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-
-	"visiologyDataUpdate/logger"
+	"visiologyDataUpdate/pkg/log"
 
 	"github.com/joho/godotenv"
 )
@@ -31,7 +30,7 @@ var params = url.Values{
 func init() {
 	err := godotenv.Load()
 	if err != nil {
-		logger.Fatal("Ошибка загрузки файла .env", "error", err)
+		log.Fatal("Ошибка загрузки файла .env", "error", err)
 	}
 
 	params.Set("username", os.Getenv("VISIOLOGY_USERNAME"))
@@ -76,7 +75,7 @@ func GetToken(visiologyURL string) (string, error) {
 
 	var token Token
 	if err := json.Unmarshal(body, &token); err != nil {
-		logger.Error("Ошибка десериализации тела ответа", "error", err, "body", string(body), "request", req)
+		log.Error("Ошибка десериализации тела ответа", "error", err, "body", string(body), "request", req)
 		return "", fmt.Errorf("ошибка десериализации тела ответа: %w", err)
 	}
 
@@ -86,7 +85,7 @@ func GetToken(visiologyURL string) (string, error) {
 // closeResponse закрывает тело ответа и логирует ошибку, если она произошла.
 func closeResponse(body io.ReadCloser) {
 	if err := body.Close(); err != nil {
-		logger.Error("Ошибка закрытия тела ответа", "error", err)
+		log.Error("Ошибка закрытия тела ответа", "error", err)
 	}
 }
 
@@ -94,8 +93,8 @@ func closeResponse(body io.ReadCloser) {
 func handleNonOKResponse(resp *http.Response) {
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		logger.Error("Ошибка во время чтения тела ответа", "error", err)
+		log.Error("Ошибка во время чтения тела ответа", "error", err)
 		return
 	}
-	logger.Error("Некорректный статус HTTP", "status", resp.StatusCode, "body", string(bodyBytes))
+	log.Error("Некорректный статус HTTP", "status", resp.StatusCode, "body", string(bodyBytes))
 }
