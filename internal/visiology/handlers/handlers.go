@@ -9,8 +9,8 @@ import (
 	"os"
 	"strings"
 	digitalprofile "visiologyDataUpdate/internal/digital_profile/handlers"
+	"visiologyDataUpdate/internal/log"
 	visiology "visiologyDataUpdate/internal/visiology/structs"
-	"visiologyDataUpdate/pkg/log"
 )
 
 // OrgIDs представляет собой список идентификаторов организаций, валидных для обработки.

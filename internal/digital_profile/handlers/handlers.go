@@ -5,7 +5,7 @@ import (
 	"io"
 	"net/http"
 	"visiologyDataUpdate/internal/digital_profile/structs"
-	"visiologyDataUpdate/pkg/log"
+	"visiologyDataUpdate/internal/log"
 )
 
 // GetResponse представляет ответ от API цифрового профиля.

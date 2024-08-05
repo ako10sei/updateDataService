@@ -2,10 +2,9 @@ package main
 
 import (
 	"os"
-	"visiologyDataUpdate/pkg/log"
-
 	digitalprofileHandlers "visiologyDataUpdate/internal/digital_profile/handlers"
 	digitalprofileToken "visiologyDataUpdate/internal/digital_profile/token"
+	"visiologyDataUpdate/internal/log"
 	visiologyHandlers "visiologyDataUpdate/internal/visiology/handlers"
 	visiologyToken "visiologyDataUpdate/internal/visiology/token"
 
