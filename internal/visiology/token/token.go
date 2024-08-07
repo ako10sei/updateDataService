@@ -52,6 +52,8 @@ func GetToken(visiologyURL string) (string, error) {
 		return "", fmt.Errorf("ошибка создания HTTP-запроса: %w", err)
 	}
 
+	// Заголовок авторизации не утечка! Данный токен един и указан в самой документации к апи (открытый источник)
+	// https://visiology-doc.atlassian.net/wiki/spaces/v34/pages/214077490
 	req.Header.Add("Authorization", "Basic cHVibGljX3JvX2NsaWVudDpAOVkjbmckXXU+SF4zajY=")
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 
