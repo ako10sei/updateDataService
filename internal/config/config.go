@@ -16,7 +16,7 @@ type Config struct {
 	VisiologyAPIVersion  string
 }
 
-func LoadEnv() (*Config, error) {
+func Load() (*Config, error) {
 	if err := godotenv.Load(); err != nil {
 		return nil, err
 	}

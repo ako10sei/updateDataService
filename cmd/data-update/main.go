@@ -12,7 +12,7 @@ import (
 func main() {
 	// Инициализируем логгер
 	log.InitLogger()
-	config, err := conf.LoadEnv()
+	config, err := conf.Load()
 	if err != nil {
 		log.Fatal("Ошибка загрузки файла .env: ", err)
 	}
