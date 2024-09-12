@@ -1,6 +1,7 @@
 package config
 
 import (
+	"log/slog"
 	"os"
 	digitalprofileToken "visiologyDataUpdate/internal/digital_profile/token"
 	visiologyToken "visiologyDataUpdate/internal/visiology/token"
@@ -9,6 +10,7 @@ import (
 )
 
 type Config struct {
+	Env                  string
 	DigitalProfileURL    string
 	DigitalProfileBearer string
 	VisiologyURL         string
@@ -16,19 +18,20 @@ type Config struct {
 	VisiologyAPIVersion  string
 }
 
-func Load() (*Config, error) {
+func Load(log *slog.Logger) (*Config, error) {
 	if err := godotenv.Load(); err != nil {
 		return nil, err
 	}
 
+	env := os.Getenv("ENVIRONMENT")
 	digitalProfileURL := os.Getenv("DIGITAL_PROFILE_BASE_URL")
-	digitalProfileBearer, err := digitalprofileToken.GetToken(digitalProfileURL)
+	digitalProfileBearer, err := digitalprofileToken.GetToken(digitalProfileURL, log)
 	if err != nil {
 		return nil, err
 	}
 
 	visiologyURL := os.Getenv("VISIOLOGY_BASE_URL")
-	visiologyBearer, err := visiologyToken.GetToken(visiologyURL)
+	visiologyBearer, err := visiologyToken.GetToken(visiologyURL, log)
 	if err != nil {
 		return nil, err
 	}
@@ -36,6 +39,7 @@ func Load() (*Config, error) {
 	visiologyAPIVersion := os.Getenv("VISIOLOGY_API_VERSION")
 
 	return &Config{
+		Env:                  env,
 		DigitalProfileURL:    digitalProfileURL,
 		DigitalProfileBearer: "Bearer " + digitalProfileBearer,
 		VisiologyURL:         visiologyURL,

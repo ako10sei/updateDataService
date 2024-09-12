@@ -5,11 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"os"
 	"strings"
 	digitalprofile "visiologyDataUpdate/internal/digital_profile/handlers"
-	"visiologyDataUpdate/internal/log"
 	visiology "visiologyDataUpdate/internal/visiology/structs"
 )
 
@@ -34,6 +34,7 @@ func PostHandler(
 	visiologyURL,
 	visiologyAPIVersion,
 	visiologyBearer string,
+	log *slog.Logger,
 ) {
 	visiologyRequestBody := createRequestBody(digitalProfileResponse)
 	if visiologyRequestBody == nil {
@@ -71,10 +72,10 @@ func PostHandler(
 		return
 	}
 
-	defer closeResponse(response.Body)
+	defer closeResponse(response.Body, log)
 
 	if response.StatusCode != http.StatusOK {
-		handleNonOkResponse(response)
+		handleNonOkResponse(response, log)
 	} else {
 		log.Info("Данные успешно отправлены на Visiology")
 	}
@@ -128,17 +129,17 @@ func sendRequest(visiologyURL, visiologyAPIVersion, visiologyBearer string, json
 }
 
 // closeResponse закрывает тело ответа и логирует ошибку, если она произошла.
-func closeResponse(body io.ReadCloser) {
+func closeResponse(body io.ReadCloser, log *slog.Logger) {
 	if err := body.Close(); err != nil {
 		log.Error("Ошибка закрытия тела ответа", "error: ", err)
 	}
 }
 
 // handleNonOkResponse обрабатывает некорректный статус HTTP-ответа.
-func handleNonOkResponse(resp *http.Response) {
+func handleNonOkResponse(resp *http.Response, log *slog.Logger) {
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatal("Ошибка при чтении тела ответа", "error: ", err)
+		log.Error("Ошибка при чтении тела ответа", "error: ", err)
 	}
 
 	log.Error("Некорректный статус HTTP", "status: ", resp.StatusCode, "body: ", string(bodyBytes))

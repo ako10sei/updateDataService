@@ -3,9 +3,9 @@ package handlers
 import (
 	"encoding/json"
 	"io"
+	"log/slog"
 	"net/http"
 	"visiologyDataUpdate/internal/digital_profile/structs"
-	"visiologyDataUpdate/internal/log"
 )
 
 // GetResponse представляет ответ от API цифрового профиля.
@@ -18,7 +18,7 @@ type GetResponse struct {
 
 // GetHandler отправляет GET-запрос на указанный URL с указанным маркером доступа,
 // обрабатывает ответ и возвращает структуру GetResponse, содержащую данные организаций.
-func GetHandler(digitalProfileURL, digitalProfileBearer string) GetResponse {
+func GetHandler(digitalProfileURL, digitalProfileBearer string, log *slog.Logger) GetResponse {
 	log.Info("Отправка GET-запроса на API цифрового профиля", "url: ", digitalProfileURL+"organizations")
 
 	req, err := createRequest(digitalProfileURL+"organizations", digitalProfileBearer)
@@ -32,14 +32,14 @@ func GetHandler(digitalProfileURL, digitalProfileBearer string) GetResponse {
 		return GetResponse{}
 	}
 
-	defer closeResponse(resp.Body)
+	defer closeResponse(resp.Body, log)
 
 	if resp.StatusCode != http.StatusOK {
-		handleNonOKResponse(resp)
+		handleNonOKResponse(resp, log)
 		return GetResponse{}
 	}
 
-	return parseResponse(resp.Body)
+	return parseResponse(resp.Body, log)
 }
 
 func createRequest(url, bearer string) (*http.Request, error) {
@@ -57,7 +57,7 @@ func sendRequest(req *http.Request) (*http.Response, error) {
 	return resp, err
 }
 
-func handleNonOKResponse(resp *http.Response) {
+func handleNonOKResponse(resp *http.Response, log *slog.Logger) {
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Error("Ошибка во время чтения тела ответа", "error: ", err)
@@ -65,7 +65,7 @@ func handleNonOKResponse(resp *http.Response) {
 	log.Error("Некорректный статус HTTP", "status: ", resp.StatusCode, "body: ", string(bodyBytes))
 }
 
-func parseResponse(body io.ReadCloser) GetResponse {
+func parseResponse(body io.ReadCloser, log *slog.Logger) GetResponse {
 	data, err := io.ReadAll(body)
 	if err != nil {
 		log.Error("Ошибка во время чтения тела ответа", "error: ", err)
@@ -82,7 +82,7 @@ func parseResponse(body io.ReadCloser) GetResponse {
 	return response
 }
 
-func closeResponse(body io.ReadCloser) {
+func closeResponse(body io.ReadCloser, log *slog.Logger) {
 	if err := body.Close(); err != nil {
 		log.Error("Ошибка закрытия тела ответа", "error: ", err)
 	}

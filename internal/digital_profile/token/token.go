@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"os"
-	"visiologyDataUpdate/internal/log"
 
 	"github.com/joho/godotenv"
 )
@@ -24,7 +24,7 @@ var (
 // init выполняется при инициализации пакета и загружает переменные окружения.
 func init() {
 	if err := godotenv.Load(); err != nil {
-		log.Fatal("Ошибка загрузки файла .env", "error: ", err)
+		slog.Error("Ошибка загрузки файла .env", "error: ", err)
 	}
 
 	body = createRequestBody(grantType,
@@ -52,7 +52,7 @@ type Token struct {
 }
 
 // GetToken получает токен доступа из указанного URL.
-func GetToken(digitalProfileURL string) (string, error) {
+func GetToken(digitalProfileURL string, log *slog.Logger) (string, error) {
 	log.Debug("Отправка запроса на получение токена", "URL: ", digitalProfileURL)
 
 	req, err := http.NewRequest("POST", digitalProfileURL+"oauth2/token/", bytes.NewBuffer(body))
@@ -64,10 +64,10 @@ func GetToken(digitalProfileURL string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("ошибка при отправке HTTP-запроса: %w", err)
 	}
-	defer closeResponse(resp.Body)
+	defer closeResponse(resp.Body, log)
 
 	if resp.StatusCode != http.StatusOK {
-		handleNonOKResponse(resp)
+		handleNonOKResponse(resp, log)
 		return "", fmt.Errorf("неверный статус ответа: %d", resp.StatusCode)
 	}
 
@@ -82,7 +82,7 @@ func GetToken(digitalProfileURL string) (string, error) {
 }
 
 // handleNonOKResponse обрабатывает ошибку сервера в случае ошибки
-func handleNonOKResponse(resp *http.Response) {
+func handleNonOKResponse(resp *http.Response, log *slog.Logger) {
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Error("Ошибка во время чтения тела ответа", "error: ", err)
@@ -92,7 +92,7 @@ func handleNonOKResponse(resp *http.Response) {
 }
 
 // closeResponse закрывает тело ответа и логирует ошибку, если она произошла.
-func closeResponse(body io.ReadCloser) {
+func closeResponse(body io.ReadCloser, log *slog.Logger) {
 	if err := body.Close(); err != nil {
 		log.Error("Ошибка закрытия тела ответа", "error: ", err)
 	}
