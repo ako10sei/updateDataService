@@ -34,5 +34,5 @@ func main() {
 	// Отправка ответа на платформу Visiology
 	visiologyHandlers.PostHandler(digitalProfileResponse, cfg.VisiologyURL, cfg.VisiologyAPIVersion, cfg.VisiologyBearer, log)
 
-	log.Info("Программа завершена")
+	log.Info("Программа завершена!")
 }
