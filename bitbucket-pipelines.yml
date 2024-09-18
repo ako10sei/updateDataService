@@ -1,0 +1,30 @@
+image: golang:1.22
+
+pipelines:
+  default:
+    - step:
+        name: Build and Lint
+        caches:
+          - go
+        script:
+          - echo "Setting up Go Modules"
+          - go mod tidy
+          - echo "Running Linter"
+          - go get github.com/golangci/golangci-lint/cmd/golangci-lint
+          - golangci-lint run --config ./.golangci.yml ./...
+
+    - step:
+        name: Test
+        script:
+          - echo "Running Tests"
+          - go test ./... -v # Запуск юнит-тестов
+
+    - step:
+        name: Build
+        script:
+          - echo "Building the application"
+          - go build -o ./cmd/data-update/main.go .
+
+definitions:
+  caches:
+    go: ~/.cache/go-build
