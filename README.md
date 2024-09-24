@@ -14,11 +14,12 @@
    окружения `GOPATH` в указанный каталог.
 3. **Склонируйте проект**: Сделайте клонирование проекта по ссылке репозитория 
 ```bash
-git clone https://bitbucket.webizi.ru/scm/~sashalom666/visiologyupdategolang.git
+git clone https://github.com/ako10sei/updateDataService.git
 ```
 4. **Установите пакеты Go** с помощью команды для загрузки необходимых пакетов:
 
 ```bash
+go mod tidy
 go mod vendor
 ````
 ## Переменные окружения
@@ -27,14 +28,14 @@ go mod vendor
    примере:
 
 ```env
-DIGITAL_PROFILE_BASE_URL=https: API endpoint получения организаций ЭК
-DIGITAL_PROFILE_CLIENT_SECRET= client_secret
-DIGITAL_PROFILE_CLIENT_ID= client_id
+API_BASE_URL=https: API endpoint получения организаций 
+API_CLIENT_SECRET=client_secret
+API_CLIENT_ID=client_id
 
-VISIOLOGY_BASE_URL=https://bi.xn--33-6kcadhwnl3cfdx.xn--p1ai/
-VISIOLOGY_USERNAME= username
-VISIOLOGY_PASSWORD= password
-VISIOLOGY_API_VERSION=3.11
+REC_API_BASE_URL=URL
+REC_API_USERNAME=username
+REC_API_PASSWORD=password
+REC_API_VERSION=3.11
 
 DEBUG=True // Режим отладки. При значении флага False осуществляется функционал обновления данных портала.
 ```
