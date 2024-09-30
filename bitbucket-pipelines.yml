@@ -23,7 +23,7 @@ pipelines:
         name: Build
         script:
           - echo "Building the application"
-          - go build -o ./cmd/data-update/main . # Замените "myapp" на нужное имя
+          - go build -o ./cmd/data-update/main . 
 
   branches:
     main:
@@ -73,4 +73,4 @@ pipelines:
           name: Build
           script:
             - echo "Building the application"
-            - go build -o ./cmd/data-update/mai n .
+            - go build -o ./cmd/data-update/main .
