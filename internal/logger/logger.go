@@ -3,7 +3,7 @@ package logger
 import (
 	"log/slog"
 	"os"
-	"visiologyDataUpdate/internal/constants"
+	"visiologyDataUpdate/internal/config/constants"
 	"visiologyDataUpdate/internal/lib/logger/handlers/slogpretty"
 )
 
