@@ -6,8 +6,8 @@ import (
 	"sync"
 	"visiologyDataUpdate/external/lib/logger"
 	"visiologyDataUpdate/internal/config"
-	dp "visiologyDataUpdate/internal/digital_profile/handlers"
-	vg "visiologyDataUpdate/internal/visiology/handlers"
+	dp "visiologyDataUpdate/internal/digital_profile/handlers/college"
+	vg "visiologyDataUpdate/internal/visiology/college"
 )
 
 func Run() error {

@@ -1,4 +1,4 @@
-package handlers
+package college
 
 import (
 	"encoding/json"
@@ -6,7 +6,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
-	"visiologyDataUpdate/internal/digital_profile/structs"
+	"visiologyDataUpdate/internal/digital_profile/handlers/college/structs"
 )
 
 // GetResponse представляет ответ от API цифрового профиля.
