@@ -3,8 +3,8 @@ package logger
 import (
 	"log/slog"
 	"os"
+	"visiologyDataUpdate/external/lib/logger/handlers/slogpretty"
 	"visiologyDataUpdate/internal/config/constants"
-	"visiologyDataUpdate/internal/lib/logger/handlers/slogpretty"
 )
 
 func SetupLogger(env string) *slog.Logger {

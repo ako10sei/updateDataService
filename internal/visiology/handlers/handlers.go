@@ -9,90 +9,94 @@ import (
 	"net/http"
 	"os"
 	"strings"
+
 	digitalprofile "visiologyDataUpdate/internal/digital_profile/handlers"
 	visiology "visiologyDataUpdate/internal/visiology/structs"
 )
 
-// OrgIDs представляет собой список идентификаторов организаций, валидных для обработки.
-var (
-	OrgIDs = []int{
-		3, 11, 12, 5, 17, 22, 7, 21, 20,
-		13, 10, 24, 14, 15, 16, 18, 6, 19,
-		9, 8, 30, 43,
-	}
-	requestBody []map[string]any
-	column      visiology.Column
-	fields      = column.GetAllFields()
-)
+// HandlerConfig содержит конфигурацию и зависимости для обработки запросов.
+type HandlerConfig struct {
+	VisiologyURL        string
+	VisiologyAPIVersion string
+	VisiologyBearer     string
+	OrgIDs              []int
+	MaxIterations       int
+	Log                 *slog.Logger
+	Fields              []string
+}
 
-// maxIterations ограничивает количество итераций для обработки организаций.
-const maxIterations = 23
+// NewHandlerConfig создает новый экземпляр HandlerConfig с заданными параметрами.
+func NewHandlerConfig(visiologyURL, visiologyAPIVersion, visiologyBearer string, log *slog.Logger) *HandlerConfig {
+	column := visiology.Column{}
+	return &HandlerConfig{
+		VisiologyURL:        visiologyURL,
+		VisiologyAPIVersion: visiologyAPIVersion,
+		VisiologyBearer:     visiologyBearer,
+		OrgIDs: []int{
+			3, 11, 12, 5, 17, 22, 7, 21, 20,
+			13, 10, 24, 14, 15, 16, 18, 6, 19,
+			9, 8, 30, 43,
+		},
+		MaxIterations: 23,
+		Log:           log,
+		Fields:        column.GetAllFields(),
+	}
+}
 
 // PostHandler обрабатывает ответ от цифрового профиля и отправляет его на платформу Visiology.
-func PostHandler(
-	digitalProfileResponse digitalprofile.GetResponse,
-	visiologyURL,
-	visiologyAPIVersion,
-	visiologyBearer string,
-	log *slog.Logger,
-) {
-	visiologyRequestBody := createRequestBody(digitalProfileResponse)
+func (cfg *HandlerConfig) PostHandler(digitalProfileResponse digitalprofile.GetResponse) error {
+	visiologyRequestBody := cfg.createRequestBody(digitalProfileResponse)
 	if visiologyRequestBody == nil {
-		log.Error("Не удалось создать тело запроса, нет валидных организаций для отправки.")
-		return
+		cfg.Log.Error("Не удалось создать тело запроса, нет валидных организаций для отправки.")
 	}
 
 	jsonBody, err := json.MarshalIndent(visiologyRequestBody, "", " ")
 	if err != nil {
-		log.Error("Ошибка при маршалировании JSON тела запроса", "error: ", err)
-		return
+		cfg.Log.Error("Ошибка при маршалировании JSON тела запроса", "error: ", err)
+		return err
 	}
 
 	// Проверяем переменную окружения DEBUG
 	if os.Getenv("DEBUG") == "True" {
-		// Если DEBUG=True, выводим тело запроса и не отправляем его
-		log.Debug("Сформированное тело запроса для Visiology (тестовый режим): ", "jsonBody", string(jsonBody))
-		return // Возвращаемся и не отправляем запрос
+		cfg.Log.Debug("Сформированное тело запроса для Visiology (тестовый режим): ", "jsonBody", string(jsonBody))
+		return err
 	}
 
 	// Запрашиваем подтверждение перед отправкой
-	fmt.Print("Приступить к обновлению данных Visiology? (Да/Нет): ")
-	var userResponse string
-	_, _ = fmt.Scanln(&userResponse) //nolint:errcheck
-	// Проверяем ввод пользователя
-	if strings.ToLower(userResponse) != "да" {
-		log.Info("Обновление данных Visiology отменено пользователем.")
-		return // Прерываем выполнение, если пользователь не подтвердил
+	if !confirmAction("Приступить к обновлению данных Visiology? (Да/Нет): ") {
+		cfg.Log.Info("Обновление данных Visiology отменено пользователем.")
+		return err
 	}
 
-	// В противном случае, отправляем запрос
-	response, err := sendRequest(visiologyURL, visiologyAPIVersion, visiologyBearer, jsonBody) //nolint:bodyclose
+	// Отправляем запрос
+	response, err := cfg.sendRequest(jsonBody) //nolint:bodyclose
 	if err != nil {
-		log.Error("Ошибка при отправке HTTP-запроса", "error: ", err)
-		return
+		cfg.Log.Error("Ошибка при отправке HTTP-запроса", "error: ", err)
+		return err
 	}
-
-	defer closeResponse(response.Body, log)
+	defer closeResponse(response.Body, cfg.Log)
 
 	if response.StatusCode != http.StatusOK {
-		handleNonOkResponse(response, log)
+		handleNonOkResponse(response, cfg.Log)
 	} else {
-		log.Info("Данные успешно отправлены на Visiology")
+		cfg.Log.Info("Данные успешно отправлены на Visiology")
 	}
+
+	return nil
 }
 
 // createRequestBody формирует тело запроса на основе ответа от API цифрового профиля.
-func createRequestBody(response digitalprofile.GetResponse) []map[string]any {
+func (cfg *HandlerConfig) createRequestBody(response digitalprofile.GetResponse) []map[string]any {
+	var requestBody []map[string]any
 
-	for rownum, orgID := range OrgIDs {
-		if rownum >= maxIterations {
+	for rownum, orgID := range cfg.OrgIDs {
+		if rownum >= cfg.MaxIterations {
 			break
 		}
 
 		for _, org := range response.Organizations {
 			if org.ID == orgID {
-				// Генерируем данные по всем полям для данной организации
-				for _, field := range fields {
+				for _, field := range cfg.Fields {
 					rowData := map[string]any{
 						"rownum": rownum,
 						"values": []map[string]any{{
@@ -102,30 +106,30 @@ func createRequestBody(response digitalprofile.GetResponse) []map[string]any {
 					}
 					requestBody = append(requestBody, rowData)
 				}
-				break // Прерывание после нахождения нужной организации
+				break
 			}
 		}
 	}
 
 	if len(requestBody) == 0 {
-		return nil // Нет данных для отправки
+		return nil
 	}
 	return requestBody
 }
 
 // sendRequest отправляет HTTP POST-запрос на указанный URL и возвращает ответ.
-func sendRequest(visiologyURL, visiologyAPIVersion, visiologyBearer string, jsonBody []byte) (*http.Response, error) {
-	req, err := http.NewRequest("POST", visiologyURL+"viqube/databases/DB/tables/KHV_SPO/records/update", bytes.NewBuffer(jsonBody))
+func (cfg *HandlerConfig) sendRequest(jsonBody []byte) (*http.Response, error) {
+	req, err := http.NewRequest("POST", cfg.VisiologyURL+"viqube/databases/DB/tables/KHV_SPO/records/update", bytes.NewBuffer(jsonBody))
 	if err != nil {
 		return nil, err
 	}
 
 	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Authorization", visiologyBearer)
-	req.Header.Add("X-Api-Version", visiologyAPIVersion)
+	req.Header.Add("Authorization", cfg.VisiologyBearer)
+	req.Header.Add("X-Api-Version", cfg.VisiologyAPIVersion)
 
 	client := &http.Client{}
-	return client.Do(req) //nolint:bodyclose
+	return client.Do(req)
 }
 
 // closeResponse закрывает тело ответа и логирует ошибку, если она произошла.
@@ -141,6 +145,13 @@ func handleNonOkResponse(resp *http.Response, log *slog.Logger) {
 	if err != nil {
 		log.Error("Ошибка при чтении тела ответа", "error: ", err)
 	}
-
 	log.Error("Некорректный статус HTTP", "status: ", resp.StatusCode, "body: ", string(bodyBytes))
+}
+
+// confirmAction запрашивает подтверждение действия у пользователя.
+func confirmAction(prompt string) bool {
+	fmt.Print(prompt)
+	var userResponse string
+	_, _ = fmt.Scanln(&userResponse) //nolint:errcheck
+	return strings.ToLower(userResponse) == "да"
 }

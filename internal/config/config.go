@@ -3,10 +3,8 @@ package config
 import (
 	"log/slog"
 	"os"
-	digitalprofileToken "visiologyDataUpdate/internal/digital_profile/token"
-	visiologyToken "visiologyDataUpdate/internal/visiology/token"
-
-	"github.com/joho/godotenv"
+	"sync"
+	"visiologyDataUpdate/internal/token"
 )
 
 type Config struct {
@@ -19,31 +17,50 @@ type Config struct {
 }
 
 func Load(log *slog.Logger) (*Config, error) {
-	if err := godotenv.Load(); err != nil {
+	errChan := make(chan error, 2)
+
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	digitalProfileProvider := token.NewDigitalProfileTokenProvider(os.Getenv("DIGITAL_PROFILE_BASE_URL"))
+	visiologyProvider := token.NewVisiologyTokenProvider(os.Getenv("VISIOLOGY_BASE_URL"))
+
+	var digitalProfileBearer, visiologyBearer string
+
+	// Запуск первой горутины для получения токена Digital Profile
+	go func() {
+		defer wg.Done()
+		var err error
+		digitalProfileBearer, err = digitalProfileProvider.GetToken(log)
+		if err != nil {
+			errChan <- err
+		}
+	}()
+
+	// Запуск второй горутины для получения токена Visiology
+	go func() {
+		defer wg.Done()
+		var err error
+		visiologyBearer, err = visiologyProvider.GetToken(log)
+		if err != nil {
+			errChan <- err
+		}
+	}()
+
+	wg.Wait()
+	close(errChan)
+
+	// Проверяем наличие ошибок
+	if err, ok := <-errChan; ok {
 		return nil, err
 	}
-
-	env := os.Getenv("ENVIRONMENT")
-	digitalProfileURL := os.Getenv("DIGITAL_PROFILE_BASE_URL")
-	digitalProfileBearer, err := digitalprofileToken.GetToken(digitalProfileURL, log)
-	if err != nil {
-		return nil, err
-	}
-
-	visiologyURL := os.Getenv("VISIOLOGY_BASE_URL")
-	visiologyBearer, err := visiologyToken.GetToken(visiologyURL, log)
-	if err != nil {
-		return nil, err
-	}
-
-	visiologyAPIVersion := os.Getenv("VISIOLOGY_API_VERSION")
 
 	return &Config{
-		Env:                  env,
-		DigitalProfileURL:    digitalProfileURL,
+		Env:                  os.Getenv("ENVIRONMENT"),
+		DigitalProfileURL:    os.Getenv("DIGITAL_PROFILE_BASE_URL"),
 		DigitalProfileBearer: "Bearer " + digitalProfileBearer,
-		VisiologyURL:         visiologyURL,
+		VisiologyURL:         os.Getenv("VISIOLOGY_BASE_URL"),
 		VisiologyBearer:      "Bearer " + visiologyBearer,
-		VisiologyAPIVersion:  visiologyAPIVersion,
+		VisiologyAPIVersion:  os.Getenv("VISIOLOGY_API_VERSION"),
 	}, nil
 }

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"log/slog"
 	"net/http"
@@ -16,32 +17,38 @@ type GetResponse struct {
 	Organizations []structs.Organization `json:"results"`
 }
 
-// GetHandler отправляет GET-запрос на указанный URL с указанным маркером доступа,
-// обрабатывает ответ и возвращает структуру GetResponse, содержащую данные организаций.
-func GetHandler(digitalProfileURL, digitalProfileBearer string, log *slog.Logger) GetResponse {
-	log.Info("Отправка GET-запроса на API цифрового профиля", "url: ", digitalProfileURL+"organizations")
+// GetHandler отправляет GET-запрос на API цифрового профиля и возвращает структуру GetResponse.
+func GetHandler(digitalProfileURL, digitalProfileBearer string, log *slog.Logger) (GetResponse, error) {
+	log.Info("Отправка GET-запроса на API цифрового профиля", "url", digitalProfileURL+"organizations")
 
 	req, err := createRequest(digitalProfileURL+"organizations", digitalProfileBearer)
 	if err != nil {
-		log.Error("Ошибка создания HTTP-запроса", "error: ", err)
-		return GetResponse{}
+		log.Error("Ошибка создания HTTP-запроса", "error", err)
+		return GetResponse{}, err
 	}
 
 	resp, err := sendRequest(req) //nolint:bodyclose
 	if err != nil {
-		return GetResponse{}
+		log.Error("Ошибка при отправке HTTP-запроса", "error", err)
+		return GetResponse{}, err
 	}
-
 	defer closeResponse(resp.Body, log)
 
 	if resp.StatusCode != http.StatusOK {
-		handleNonOKResponse(resp, log)
-		return GetResponse{}
+		return GetResponse{}, handleNonOKResponse(resp, log)
 	}
 
-	return parseResponse(resp.Body, log)
+	response, err := parseResponse(resp.Body)
+	if err != nil {
+		log.Error("Ошибка при разборе ответа", "error", err)
+		return GetResponse{}, err
+	}
+
+	log.Info("Ответ получен успешно", "count", response.Count)
+	return response, nil
 }
 
+// createRequest создает новый HTTP-запрос с авторизационным заголовком.
 func createRequest(url, bearer string) (*http.Request, error) {
 	req, err := http.NewRequest("GET", url, http.NoBody)
 	if err != nil {
@@ -51,39 +58,40 @@ func createRequest(url, bearer string) (*http.Request, error) {
 	return req, nil
 }
 
+// sendRequest отправляет HTTP-запрос и возвращает ответ.
 func sendRequest(req *http.Request) (*http.Response, error) {
 	client := &http.Client{}
-	resp, err := client.Do(req) //nolint:bodyclose
-	return resp, err
+	return client.Do(req)
 }
 
-func handleNonOKResponse(resp *http.Response, log *slog.Logger) {
+// handleNonOKResponse обрабатывает некорректный статус HTTP-ответа и возвращает ошибку.
+func handleNonOKResponse(resp *http.Response, log *slog.Logger) error {
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Error("Ошибка во время чтения тела ответа", "error: ", err)
+		log.Error("Ошибка при чтении тела ответа с некорректным статусом", "error", err)
+		return err
 	}
-	log.Error("Некорректный статус HTTP", "status: ", resp.StatusCode, "body: ", string(bodyBytes))
+	log.Error("Некорректный статус HTTP", "status", resp.StatusCode, "body", string(bodyBytes))
+	return errors.New("получен некорректный статус ответа от сервера")
 }
 
-func parseResponse(body io.ReadCloser, log *slog.Logger) GetResponse {
+// parseResponse читает тело ответа и декодирует JSON в структуру GetResponse.
+func parseResponse(body io.ReadCloser) (GetResponse, error) {
 	data, err := io.ReadAll(body)
 	if err != nil {
-		log.Error("Ошибка во время чтения тела ответа", "error: ", err)
-		return GetResponse{}
+		return GetResponse{}, err
 	}
 
 	var response GetResponse
 	if err := json.Unmarshal(data, &response); err != nil {
-		log.Error("Ошибка десериализации ответа", "error: ", err, "body: ", string(data))
-		return GetResponse{}
+		return GetResponse{}, err
 	}
-
-	log.Info("Ответ получен успешно", "count: ", response.Count)
-	return response
+	return response, nil
 }
 
+// closeResponse закрывает тело ответа и логирует ошибку, если она произошла.
 func closeResponse(body io.ReadCloser, log *slog.Logger) {
 	if err := body.Close(); err != nil {
-		log.Error("Ошибка закрытия тела ответа", "error: ", err)
+		log.Error("Ошибка закрытия тела ответа", "error", err)
 	}
 }
