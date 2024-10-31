@@ -1,4 +1,4 @@
-package college
+package handlers
 
 import (
 	"bytes"
@@ -10,7 +10,7 @@ import (
 	"os"
 	"strings"
 	digitalprofile "visiologyDataUpdate/internal/digital_profile/handlers/college"
-	visiology "visiologyDataUpdate/internal/visiology/college/structs"
+	visiology "visiologyDataUpdate/internal/visiology/handlers/college/structs"
 )
 
 // HandlerConfig содержит конфигурацию и зависимости для обработки запросов.
