@@ -7,7 +7,7 @@ import (
 	"visiologyDataUpdate/external/lib/logger"
 	"visiologyDataUpdate/internal/config"
 	dp "visiologyDataUpdate/internal/digital_profile/handlers/college"
-	vg "visiologyDataUpdate/internal/visiology/handlers"
+	vg "visiologyDataUpdate/internal/visiology/handlers/college"
 )
 
 func Run() error {
