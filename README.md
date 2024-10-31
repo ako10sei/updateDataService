@@ -28,15 +28,13 @@ go mod vendor
    примере:
 
 ```env
-где * - конфиденциальные параметры
-
-DIGITAL_PROFILE_BASE_URL=https://xn--n1abf.xn--33-6kcadhwnl3cfdx.xn--p1ai/digital_profile/api/v1.0.0/
-DIGITAL_PROFILE_CLIENT_SECRET= ******
-DIGITAL_PROFILE_CLIENT_ID= ******
+DIGITAL_PROFILE_BASE_URL=https: API endpoint получения организаций ЭК
+DIGITAL_PROFILE_CLIENT_SECRET= client_secret
+DIGITAL_PROFILE_CLIENT_ID= client_id
 
 VISIOLOGY_BASE_URL=https://bi.xn--33-6kcadhwnl3cfdx.xn--p1ai/
-VISIOLOGY_USERNAME= *****
-VISIOLOGY_PASSWORD= *****
+VISIOLOGY_USERNAME= username
+VISIOLOGY_PASSWORD= password
 VISIOLOGY_API_VERSION=3.11
 
 ENVIRONMENT=local
