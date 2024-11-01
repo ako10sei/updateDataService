@@ -1,4 +1,4 @@
-module updateDataService
+module github.com/ako10sei/updateDataService
 
 go 1.22
 
