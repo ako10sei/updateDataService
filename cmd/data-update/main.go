@@ -2,7 +2,7 @@ package main
 
 import (
 	"os"
-	"visiologyDataUpdate/internal/app"
+	"updateDataService/internal/app"
 )
 
 func main() {

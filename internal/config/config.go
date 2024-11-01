@@ -4,7 +4,7 @@ import (
 	"log/slog"
 	"os"
 	"sync"
-	"visiologyDataUpdate/internal/token"
+	"updateDataService/internal/token"
 )
 
 type Config struct {

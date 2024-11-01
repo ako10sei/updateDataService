@@ -6,7 +6,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
-	"visiologyDataUpdate/internal/digital_profile/handlers/college/structs"
+	"updateDataService/internal/digital_profile/handlers/college/structs"
 )
 
 // GetResponse представляет ответ от API цифрового профиля.

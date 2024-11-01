@@ -4,10 +4,10 @@ import (
 	"log/slog"
 	"os"
 	"sync"
-	"visiologyDataUpdate/external/lib/logger"
-	"visiologyDataUpdate/internal/config"
-	dp "visiologyDataUpdate/internal/digital_profile/handlers/college"
-	vg "visiologyDataUpdate/internal/visiology/handlers/college"
+	"updateDataService/external/lib/logger"
+	"updateDataService/internal/config"
+	dp "updateDataService/internal/digital_profile/handlers/college"
+	vg "updateDataService/internal/visiology/handlers/college"
 )
 
 func Run() error {

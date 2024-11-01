@@ -1,4 +1,4 @@
-module visiologyDataUpdate
+module updateDataService
 
 go 1.22
 

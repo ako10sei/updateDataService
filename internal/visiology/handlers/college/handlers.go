@@ -9,8 +9,8 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	digitalprofile "visiologyDataUpdate/internal/digital_profile/handlers/college"
-	visiology "visiologyDataUpdate/internal/visiology/handlers/college/structs"
+	digitalprofile "updateDataService/internal/digital_profile/handlers/college"
+	visiology "updateDataService/internal/visiology/handlers/college/structs"
 )
 
 // HandlerConfig содержит конфигурацию и зависимости для обработки запросов.
