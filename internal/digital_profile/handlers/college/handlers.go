@@ -3,10 +3,10 @@ package college
 import (
 	"encoding/json"
 	"errors"
+	"github.com/ako10sei/updateDataService/internal/digital_profile/handlers/college/structs"
 	"io"
 	"log/slog"
 	"net/http"
-	"updateDataService/internal/digital_profile/handlers/college/structs"
 )
 
 // GetResponse представляет ответ от API цифрового профиля.

@@ -1,10 +1,10 @@
 package config
 
 import (
+	"github.com/ako10sei/updateDataService/internal/token"
 	"log/slog"
 	"os"
 	"sync"
-	"updateDataService/internal/token"
 )
 
 type Config struct {

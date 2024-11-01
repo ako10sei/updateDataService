@@ -1,10 +1,10 @@
 package logger
 
 import (
+	"github.com/ako10sei/updateDataService/external/lib/logger/handlers/slogpretty"
+	"github.com/ako10sei/updateDataService/internal/config/constants"
 	"log/slog"
 	"os"
-	"updateDataService/external/lib/logger/handlers/slogpretty"
-	"updateDataService/internal/config/constants"
 )
 
 func SetupLogger(env string) *slog.Logger {
