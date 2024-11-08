@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/ako10sei/updateDataService/internal/app"
 	"os"
+
+	"github.com/ako10sei/updateDataService/internal/app"
 )
 
 func main() {

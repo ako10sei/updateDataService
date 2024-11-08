@@ -1,13 +1,14 @@
 package app
 
 import (
+	"log/slog"
+	"os"
+	"sync"
+
 	"github.com/ako10sei/updateDataService/external/lib/logger"
 	"github.com/ako10sei/updateDataService/internal/config"
 	dp "github.com/ako10sei/updateDataService/internal/digital_profile/handlers/college"
 	vg "github.com/ako10sei/updateDataService/internal/visiology/handlers/college"
-	"log/slog"
-	"os"
-	"sync"
 )
 
 func Run() error {

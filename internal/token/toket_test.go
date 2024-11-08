@@ -8,8 +8,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"log/slog"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestDigitalProfileTokenProvider_GetToken(t *testing.T) {

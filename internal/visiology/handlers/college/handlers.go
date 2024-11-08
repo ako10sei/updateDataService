@@ -4,13 +4,14 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	digitalprofile "github.com/ako10sei/updateDataService/internal/digital_profile/handlers/college"
-	visiology "github.com/ako10sei/updateDataService/internal/visiology/handlers/college/structs"
 	"io"
 	"log/slog"
 	"net/http"
 	"os"
 	"strings"
+
+	digitalprofile "github.com/ako10sei/updateDataService/internal/digital_profile/handlers/college"
+	visiology "github.com/ako10sei/updateDataService/internal/visiology/handlers/college/structs"
 )
 
 // HandlerConfig содержит конфигурацию и зависимости для обработки запросов.
